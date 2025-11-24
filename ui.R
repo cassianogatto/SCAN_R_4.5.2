@@ -4,25 +4,45 @@
 
 #### VERSÃO GEMINI ####
 
+#### OLD CALL FOR PACKAGES ####
+
+# library(shiny)
+# library(shinydashboard)
+# library(htmltools)
+# library(dplyr)
+# library(igraph)
+# library(tidygraph)
+# library(tidyr)
+# library(ggraph)
+# library(readr)
+# library(sf)
+# library(ggplot2)
+# library(leaflet)
+# # library(rgdal) # REMOVIDO: Descontinuado
+# library(units)
+# # library(leaflet.esri) # Opcional: Se não usar tiles ESRI específicos, pode remover. Mantido por segurança.
 
 
-library(shiny)
-library(shinydashboard)
-library(htmltools)
-library(dplyr)
-library(igraph)
-library(tidygraph)
-library(tidyr)
-library(ggraph)
-library(readr)
-library(sf)
-library(ggplot2)
-library(leaflet)
-# library(rgdal) # REMOVIDO: Descontinuado
-library(units)
-# library(leaflet.esri) # Opcional: Se não usar tiles ESRI específicos, pode remover. Mantido por segurança.
+#### NEW CALL FOR PACKAGES ####
+# 1. Install pacman if not already installed
+if (!require("pacman")) install.packages("pacman")
 
-# UI
+# 2. Load all packages (installs them automatically if missing)
+pacman::p_load(
+  shiny,
+  dplyr,
+  sf,
+  igraph,
+  tidygraph,
+  leaflet,
+  ggplot2,
+  ggraph,
+  tidyr,
+  lwgeom,
+  shinydashboard
+)
+
+#### UI ####
 
 shinyUI(
   
