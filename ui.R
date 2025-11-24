@@ -2,45 +2,14 @@
 
 
 
-#### VERSÃO GEMINI ####
-
-#### OLD CALL FOR PACKAGES ####
-
-# library(shiny)
-# library(shinydashboard)
-# library(htmltools)
-# library(dplyr)
-# library(igraph)
-# library(tidygraph)
-# library(tidyr)
-# library(ggraph)
-# library(readr)
-# library(sf)
-# library(ggplot2)
-# library(leaflet)
-# # library(rgdal) # REMOVIDO: Descontinuado
-# library(units)
-# # library(leaflet.esri) # Opcional: Se não usar tiles ESRI específicos, pode remover. Mantido por segurança.
-
+## VERSÃO GEMINI ##
 
 #### NEW CALL FOR PACKAGES ####
 # 1. Install pacman if not already installed
 if (!require("pacman")) install.packages("pacman")
 
 # 2. Load all packages (installs them automatically if missing)
-pacman::p_load(
-  shiny,
-  dplyr,
-  sf,
-  igraph,
-  tidygraph,
-  leaflet,
-  ggplot2,
-  ggraph,
-  tidyr,
-  lwgeom,
-  shinydashboard
-)
+pacman::p_load( shiny, dplyr, sf, igraph, tidygraph, leaflet, ggplot2, ggraph, tidyr, lwgeom, shinydashboard )
 
 #### UI ####
 
@@ -48,17 +17,14 @@ shinyUI(
   
   dashboardPage( skin = 'black',
                  
+                 # header ----
                  dashboardHeader(
-                   # Set the width to match your sidebar width (230px) so it aligns perfectly
-                   titleWidth = 230,
+                   titleWidth = 230,        # Set the width to match your sidebar width (230px) so it aligns perfectly
                    
-                   title = span(
-                     # The Image: must be in 'www' folder. 
-                     # We adjust margin-top to center it vertically and margin-right for spacing
-                     tags$img(src = "SCAN_logo1.png", width = "50px", style = "margin-top: -5px; margin-right: 10px;"), 
+                   title = span(    "SCAN V_1",                  # The Image: must be in 'www' folder. 
+                                                      # We adjust margin-top to center it vertically and margin-right for spacing
+                     tags$img(src = "SCAN_logo1.png", width = "80px", style = "margin-top: -5px; margin-right: 10px;")
                      
-                     # The Text
-                     "SCAN V_1"
                    )
                  ),
                  
