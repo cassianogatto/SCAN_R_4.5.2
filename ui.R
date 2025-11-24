@@ -28,13 +28,26 @@ shinyUI(
   
   dashboardPage( skin = 'black',
                  
-                 dashboardHeader(title = "SCAN engine V_0.22"),
+                 dashboardHeader(
+                   # Set the width to match your sidebar width (230px) so it aligns perfectly
+                   titleWidth = 230,
+                   
+                   title = span(
+                     # The Image: must be in 'www' folder. 
+                     # We adjust margin-top to center it vertically and margin-right for spacing
+                     tags$img(src = "SCAN_logo1.png", width = "50px", style = "margin-top: -5px; margin-right: 10px;"), 
+                     
+                     # The Text
+                     "SCAN V_1"
+                   )
+                 ),
                  
                  # menu sidebar ----
                  dashboardSidebar( width = '230px',
                                    
                                    sidebarMenu(
                                      menuItem("about SCAN", tabName = "about_SCAN", icon = icon("info-circle")),
+                                     menuItem("Tutorial", tabName = "tutorial", icon = icon("book")), # <--- NEW ITEM HERE
                                      menuItem("Species Distribution Maps ", tabName = "maps", icon = icon("map")),
                                      menuItem("Spatial Congruence", tabName = "Cs_tab", icon = icon("calculator")),
                                      menuItem("SCAN Analysis", tabName = "scan", icon = icon("project-diagram")),
@@ -67,57 +80,231 @@ shinyUI(
                    tabItems(
                      
                      # about SCAN ----
-                     tabItem("about_SCAN",
-                             
+                     # tabItem("about_SCAN",
+                     #         
+                     #         fluidPage(
+                     #           
+                     #           tags$h3("SCAN"),
+                     #           
+                     #           tags$h4(tags$a(href="https://github.com/cassianogatto/SCAN_engine_app", "https://github.com/cassianogatto/SCAN_engine_app", target="_blank")),
+                     #           
+                     #           fluidRow(
+                     #             
+                     #             infoBox(width = 12,
+                     #                     title = "Chorotypes", 
+                     #                     value = " Chorotypes are unique combinations of species with spatial congruences (Cs) higher between themselves than to any species of other such groups.
+                     #             In SCAN species groupings are relative to (and determined by) thresholds of spatial congruence (Ct).
+                     #             Each chorotype corresponds to a 'community' in network terminology. In the graph representation, species are vertices (nodes) and links (edges) are Cs values.
+                     #             The map depicts the actual spatial distribution of each component species of a chorotype.
+                     #             Chorotypes may 'evolve' grouping more species as thresholds get lower, until any stopping criteria is reached, such as the absence of spatial overlap between all species.
+                     #             Some chorotypes are ensembled at high Ct values, meaning a very cohesive spatial distribution; others only at low Ct's - it depends on the biogeograpical, ecological and historical attributes of species and environments.
+                     #             The description, decision, interpretation and discussion about patterns vs. biogeography is the role of the biogeographer. Pls refer to Gatto & Cohn-Haft 2021 to a detailed analysis of these conceptual implications - PlosOne https://doi.org/10.1371/journal.pone.0245818", 
+                     #                     icon = icon("users")),
+                     #             
+                     #             imageOutput("photo"), # Corrigido nome do output para bater com server ("photo" vs "photo1")
+                     #             
+                     #             box(width = 12,
+                     #                 tags$h4("Abstract (from Gatto & Cohn-Haft 2021)"),
+                     #                 tags$h6("Species with congruent geographical distributions, potentially caused by common historical and 
+                     #            ecological spatial processes, constitute biogeographical units called chorotypes. Nevertheless, the
+                     #            degree of spatial range congruence characterizing these groups of species is rarely used as an explicit 
+                     #            parameter. Methods conceived for the identification of patterns of shared ranges often suffer from scale 
+                     #            bias associated with the use of grids, or the incapacity to describe the full complexity of patterns, 
+                     #            from core areas of high spatial congruence, to long gradients of range distributions expanding from 
+                     #            these core areas. Here, we propose a simple analytical method, Spatial Congruence Analysis (SCAN), 
+                     #            which identifies chorotypes by mapping direct and indirect spatial relationships among species. 
+                     #            Assessments are made under a referential value of congruence as an explicit numerical parameter. 
+                     #            A one-layered network connects species (vertices) using pairwise spatial congruence estimates (edges). 
+                     #            This network is then analyzed for each species, separately, by an algorithm which searches for spatial 
+                     #            relationships to the reference species. The method was applied to two datasets: a simulated gradient of 
+                     #            ranges and real distributions of birds. The simulated dataset showed that SCAN can describe gradients 
+                     #            of distribution with a high level of detail. The bird dataset showed that only a small portion of 
+                     #            range overlaps is biogeographically meaningful, and that there is a large variation in types of patterns 
+                     #            that can be found with real distributions. Species analyzed separately may converge on similar or 
+                     #            identical groups, may be nested in larger chorotypes, or may even generate overlapped patterns with no 
+                     #            species in common. Chorotypes can vary from simple ones, composed by few highly congruent species, to 
+                     #            complex, with numerous alternative component species and spatial configurations, which offer insights 
+                     #            about possible processes driving these patterns in distinct degrees of spatial congruence. Metrics 
+                     #            such as congruence, depth, richness, and ratio between common and total areas can be used to describe 
+                     #            chorotypes in detail, allowing comparisons between patterns across regions and taxa.")
+                     #             )                     
+                     #           )
+                     #         )
+                     #         
+                     # ),
+                     
+                     #### TUTORIAL TAB GEMINI
+                     # Add this inside tabItems() in your ui.R
+                     
+                     tabItem(tabName = "tutorial",
                              fluidPage(
+                               tags$h2("SCAN Engine Tutorial"),
+                               tags$p("Follow this step-by-step guide to perform a Spatial Congruence Analysis."),
                                
-                               tags$h3("SCAN"),
+                               # Step 1: Loading Maps
+                               box(width = 12, title = "Step 1: Loading Species Maps", status = "primary", solidHeader = TRUE, collapsible = TRUE,
+                                   
+                                   tags$h4(icon("map"), "Input File Requirements"),
+                                   tags$ul(
+                                     tags$li("Your map must be a ", tags$strong("Shapefile (.shp)"), "."),
+                                     tags$li("The map must contain ", tags$strong("all species' distributions as unique layers"), ", each having unique IDs and geometries."),
+                                     tags$li("Ideally, the Shapefile should have at least one ID column named ", tags$code("'sp'"), " and a column named ", tags$code("'geometry'"), ".")
+                                   ),
+                                   
+                                   tags$br(),
+                                   tags$h4(icon("upload"), "Loading Steps"),
+                                   tags$ol(
+                                     tags$li(tags$strong("Upload:"), " Click the ", tags$em("Browse..."), " button in the 'Species Distribution Maps' tab. ", 
+                                             tags$strong("Important:"), " You must select the ", tags$code(".shp"), " file along with its associated files (e.g., ", tags$code(".shx, .dbf, .prj"), ") simultaneously."),
+                                     tags$li(tags$strong("Verification:"), " Once loaded, the app will display information regarding the number of species, the Geographic Projection (CRS), and column names."),
+                                     tags$li(tags$strong("Adjusting ID Column:"), " If your species ID column is not named 'sp', type the ", tags$strong("correct column name"), " in the text box provided and reload the map.")
+                                   ),
+                                   
+                                   tags$br(),
+                                   tags$h4(icon("exclamation-triangle"), "Troubleshooting & Warnings"),
+                                   tags$ul(
+                                     tags$li(tags$strong("Invalid Geometries:"), " The status section will indicate if there are 'invalid species' (layers with corrupted geometries). The goal is to see ", tags$code("no invalid species"), "."),
+                                     tags$li(tags$strong("Fixing Options:"), " You can attempt to fix geometries by checking the following boxes:",
+                                             tags$ul(
+                                               tags$li(tags$strong("Projection (CRS):"), " Transform the CRS of the entire shapefile. Check the box and enter a new EPSG number (refer to ", tags$a(href="https://epsg.io", "epsg.io", target="_blank"), ")."),
+                                               tags$li(tags$strong("st_make_valid:"), " Apply the ", tags$code("sf::st_make_valid"), " function to attempt to fix individual species layers.")
+                                             )
+                                     ),
+                                     tags$li(tags$strong("Performance Warning:"), " Please be aware that for large datasets, Shiny may take a long time to process both individual steps and the overall analysis.")
+                                   )
+                               ),
                                
-                               tags$h4(tags$a(href="https://github.com/cassianogatto/SCAN_engine_app", "https://github.com/cassianogatto/SCAN_engine_app", target="_blank")),
+                               # ... (Keep Step 1 Box as it is) ...
                                
-                               fluidRow(
-                                 
-                                 infoBox(width = 12,
-                                         title = "Chorotypes", 
-                                         value = " Chorotypes are unique combinations of species with spatial congruences (Cs) higher between themselves than to any species of other such groups.
-                                 In SCAN species groupings are relative to (and determined by) thresholds of spatial congruence (Ct).
-                                 Each chorotype corresponds to a 'community' in network terminology. In the graph representation, species are vertices (nodes) and links (edges) are Cs values.
-                                 The map depicts the actual spatial distribution of each component species of a chorotype.
-                                 Chorotypes may 'evolve' grouping more species as thresholds get lower, until any stopping criteria is reached, such as the absence of spatial overlap between all species.
-                                 Some chorotypes are ensembled at high Ct values, meaning a very cohesive spatial distribution; others only at low Ct's - it depends on the biogeograpical, ecological and historical attributes of species and environments.
-                                 The description, decision, interpretation and discussion about patterns vs. biogeography is the role of the biogeographer. Pls refer to Gatto & Cohn-Haft 2021 to a detailed analysis of these conceptual implications - PlosOne https://doi.org/10.1371/journal.pone.0245818", 
-                                         icon = icon("users")),
-                                 
-                                 imageOutput("photo"), # Corrigido nome do output para bater com server ("photo" vs "photo1")
-                                 
-                                 box(width = 12,
-                                     tags$h4("Abstract (from Gatto & Cohn-Haft 2021)"),
-                                     tags$h6("Species with congruent geographical distributions, potentially caused by common historical and 
-                                ecological spatial processes, constitute biogeographical units called chorotypes. Nevertheless, the
-                                degree of spatial range congruence characterizing these groups of species is rarely used as an explicit 
-                                parameter. Methods conceived for the identification of patterns of shared ranges often suffer from scale 
-                                bias associated with the use of grids, or the incapacity to describe the full complexity of patterns, 
-                                from core areas of high spatial congruence, to long gradients of range distributions expanding from 
-                                these core areas. Here, we propose a simple analytical method, Spatial Congruence Analysis (SCAN), 
-                                which identifies chorotypes by mapping direct and indirect spatial relationships among species. 
-                                Assessments are made under a referential value of congruence as an explicit numerical parameter. 
-                                A one-layered network connects species (vertices) using pairwise spatial congruence estimates (edges). 
-                                This network is then analyzed for each species, separately, by an algorithm which searches for spatial 
-                                relationships to the reference species. The method was applied to two datasets: a simulated gradient of 
-                                ranges and real distributions of birds. The simulated dataset showed that SCAN can describe gradients 
-                                of distribution with a high level of detail. The bird dataset showed that only a small portion of 
-                                range overlaps is biogeographically meaningful, and that there is a large variation in types of patterns 
-                                that can be found with real distributions. Species analyzed separately may converge on similar or 
-                                identical groups, may be nested in larger chorotypes, or may even generate overlapped patterns with no 
-                                species in common. Chorotypes can vary from simple ones, composed by few highly congruent species, to 
-                                complex, with numerous alternative component species and spatial configurations, which offer insights 
-                                about possible processes driving these patterns in distinct degrees of spatial congruence. Metrics 
-                                such as congruence, depth, richness, and ratio between common and total areas can be used to describe 
-                                chorotypes in detail, allowing comparisons between patterns across regions and taxa.")
-                                 )                     
+                               # Step 2: Spatial Congruence
+                               box(width = 12, title = "Step 2: Spatial Congruence (Cs)", status = "warning", solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
+                                   
+                                   tags$h4(icon("calculator"), "Calculating the Index"),
+                                   tags$p("In the 'Spatial Congruence' tab, you define how similarity between species is quantified."),
+                                   tags$ul(
+                                     tags$li(tags$strong("Formula:"), " The default is the ", tags$strong("Hargrove Index"), " (overlap area / species area). You can define a custom formula by checking 'Use an alternative Cs Index'."),
+                                     tags$li(tags$strong("Filtering:"), " Use the 'Minimum Cs value' input to remove weak connections (e.g., < 0.1) to clean up the network."),
+                                     tags$li(tags$strong("Action:"), " Click ", tags$code("Apply Cs index to map"), " to start the calculation.")
+                                   ),
+                                   
+                                   tags$br(),
+                                   tags$h4(icon("layer-group"), "Optimization (Buffers)"),
+                                   tags$p("For large datasets or complex geometries, exact intersection can be slow."),
+                                   tags$ul(
+                                     tags$li("Check ", tags$strong("Use an internal buffer"), " to slightly shrink polygons before calculation. This avoids marginal/accidental overlaps."),
+                                     tags$li(tags$em("Note:"), " This works best with metric CRS (e.g., UTM).")
+                                   ),
+                                   
+                                   tags$br(),
+                                   tags$h4(icon("file-upload"), "Alternative: Upload Cs"),
+                                   tags$p("If you have already calculated the Cs matrix elsewhere, check ", tags$strong("Upload a Cs csv file instead"), " and upload your table containing columns: ", tags$code("sp1, sp2, Cs"), ".")
+                               ),
+                               
+                               # Step 3: Running SCAN
+                               box(width = 12, title = "Step 3: Running SCAN Analysis", status = "success", solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
+                                   
+                                   tags$h4(icon("sliders-h"), "Configuration"),
+                                   tags$p("Configure how the algorithm scans through the network thresholds (Ct):"),
+                                   tags$ul(
+                                     tags$li(tags$strong("Range:"), " Set the ", tags$code("Max"), " and ", tags$code("Min"), " threshold values."),
+                                     tags$li(tags$strong("Resolution:"), " Define the step size (e.g., 0.01) for the scan. Smaller steps take longer but provide more detail."),
+                                     tags$li(tags$strong("Criteria:"), 
+                                             tags$ul(
+                                               tags$li(tags$strong("Overlap:"), " If checked, requires all species in a group to overlap with each other (Clique)."),
+                                               tags$li(tags$strong("Diameter:"), " Limits the maximum 'width' of the network component to avoid sprawling chains of species.")
+                                             )
+                                     )
+                                   ),
+                                   
+                                   tags$br(),
+                                   tags$h4(icon("play-circle"), "Execution"),
+                                   tags$p("Click the ", tags$strong("SCAN!"), " button. The result tables (Chorotypes, Parameters) will appear below. You can download them as CSV files.")
+                               ),
+                               
+                               # Step 4: Visualization
+                               box(width = 12, title = "Step 4: Visualizing Results (Viewer)", status = "info", solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
+                                   
+                                   tags$h4(icon("eye"), "Exploring Chorotypes"),
+                                   tags$p("Go to the 'SCAN Viewer' tab to explore the results interactively."),
+                                   tags$ol(
+                                     tags$li(tags$strong("Select Threshold (Ct):"), " Use the input box to choose a specific cut-off level."),
+                                     tags$li(tags$strong("Select Chorotypes:"), " A list of available groups (numbers) for that threshold will appear. Check the boxes to visualize specific groups."),
+                                     tags$li(tags$strong("Customize:"), " Adjust transparency and color palettes using the controls on the right.")
+                                   ),
+                                   
+                                   tags$br(),
+                                   tags$h4(icon("images"), "View Modes"),
+                                   tags$ul(
+                                     tags$li(tags$strong("Interactive Map:"), " A Leaflet map allowing zooming and panning."),
+                                     tags$li(tags$strong("Static Map:"), " A high-quality ggplot map suitable for publication."),
+                                     tags$li(tags$strong("Network Graphs:"), " Visualize the topology of the species' relationships (Simple or Detailed views).")
+                                   )
                                )
                              )
-                             
+                     ),
+                     
+                     
+                     # Replace your current tabItem("about_SCAN", ...) in ui.R with this:
+                     
+                     tabItem("about_SCAN",
+                             fluidPage(
+                               # --- 1. HERO SECTION: LARGE LOGO ---
+                               fluidRow(
+                                 column(12, align = "center",
+                                        # The image must be in the 'www' folder. Adjust width as needed.
+                                        tags$img(src = "SCAN_logo1.png", width = "75%", style = "margin: 20px 0;")
+                                 )
+                               ),
+                               
+                               # --- 2. TITLE & LINK ---
+                               fluidRow(
+                                 column(12, align = "center",
+                                        tags$h2("Spatial Congruence Analysis", style = "font-weight: bold;"),
+                                        tags$h4("By cassianogatto@gmail.com"),
+                                        tags$h4(icon("github"), tags$a(href="https://github.com/cassianogatto/SCAN_engine_app", "View on GitHub", target="_blank")),
+                                        tags$hr(style = "border-top: 1px solid #ccc; width: 60%;") # A subtle separator line
+                                 )
+                               ),
+                               
+                               # --- 3. INTRODUCTION TEXT ---
+                               # Using a centered column for better readability on wide screens
+                               fluidRow(
+                                 column(10, offset = 1,
+                                        
+                                        tags$div(style = "background-color: #f8f9fa; padding: 20px; border-radius: 5px; border-left: 5px solid #3c8dbc;",
+                                                 tags$h3(icon("users"), " What are Chorotypes?", style = "margin-top: 0; color: #3c8dbc;"),
+                                                 tags$p(style = "font-size: 1.1em; line-height: 1.5; text-align: justify;",
+                                                        "Chorotypes are unique combinations of species with spatial congruences (Cs) higher between themselves than to any species of other such groups.
+                                   In SCAN, species groupings are relative to (and determined by) thresholds of spatial congruence (Ct)."
+                                                 ),
+                                                 tags$p(style = "font-size: 1.1em; line-height: 1.5; text-align: justify;",
+                                                        "Each chorotype corresponds to a 'community' in network terminology. In the graph representation, species are vertices (nodes) and links (edges) are Cs values.
+                                   The map depicts the actual spatial distribution of each component species of a chorotype."
+                                                 ),
+                                                 tags$p(style = "font-size: 1.1em; line-height: 1.5; text-align: justify;",
+                                                        "Chorotypes may 'evolve', grouping more species as thresholds get lower, until any stopping criteria is reached. Some chorotypes ensemble at high Ct values (cohesive distribution), others only at low Ct's."
+                                                 ),
+                                                 tags$p(style = "font-style: italic; margin-top: 15px;",
+                                                        "The description, decision, interpretation and discussion about patterns vs. biogeography is the role of the biogeographer. Please refer to Gatto & Cohn-Haft 2021 for a detailed analysis of these conceptual implications - PlosOne",
+                                                        tags$a(href="https://doi.org/10.1371/journal.pone.0245818", "https://doi.org/10.1371/journal.pone.0245818", target="_blank")
+                                                 )
+                                        )
+                                 )
+                               ),
+                               
+                               tags$br(),
+                               
+                               # --- 4. ABSTRACT BOX ---
+                               fluidRow(
+                                 column(10, offset = 1,
+                                        box(width = 12, title = "Abstract (Gatto & Cohn-Haft 2021)", status = "primary", solidHeader = TRUE, collapsible = TRUE, collapsed = FALSE,
+                                            tags$p(style = "text-align: justify;",
+                                                   "Species with congruent geographical distributions, potentially caused by common historical and ecological spatial processes, constitute biogeographical units called chorotypes. Nevertheless, the degree of spatial range congruence characterizing these groups of species is rarely used as an explicit parameter. Methods conceived for the identification of patterns of shared ranges often suffer from scale bias associated with the use of grids, or the incapacity to describe the full complexity of patterns, from core areas of high spatial congruence, to long gradients of range distributions expanding from these core areas. Here, we propose a simple analytical method, Spatial Congruence Analysis (SCAN), which identifies chorotypes by mapping direct and indirect spatial relationships among species. Assessments are made under a referential value of congruence as an explicit numerical parameter. A one-layered network connects species (vertices) using pairwise spatial congruence estimates (edges). This network is then analyzed for each species, separately, by an algorithm which searches for spatial relationships to the reference species. The method was applied to two datasets: a simulated gradient of ranges and real distributions of birds. The simulated dataset showed that SCAN can describe gradients of distribution with a high level of detail. The bird dataset showed that only a small portion of range overlaps is biogeographically meaningful, and that there is a large variation in types of patterns that can be found with real distributions. Species analyzed separately may converge on similar or identical groups, may be nested in larger chorotypes, or may even generate overlapped patterns with no species in common. Chorotypes can vary from simple ones, composed by few highly congruent species, to complex, with numerous alternative component species and spatial configurations, which offer insights about possible processes driving these patterns in distinct degrees of spatial congruence. Metrics such as congruence, depth, richness, and ratio between common and total areas can be used to describe chorotypes in detail, allowing comparisons between patterns across regions and taxa."
+                                            )
+                                        )
+                                 )
+                               )
+                             )
                      ),
                      
                      
