@@ -1,13 +1,19 @@
-library(shiny)
-library(dplyr)
-library(sf)
-library(igraph)
-library(tidygraph)
-library(leaflet)
-library(ggplot2)
-library(ggraph)
-library(tidyr)
-library(lwgeom) #install.packages("lwgeom")
+# 1. Install pacman if not already installed
+if (!require("pacman")) install.packages("pacman")
+
+# 2. Load all packages (installs them automatically if missing)
+pacman::p_load(
+  shiny,
+  dplyr,
+  sf,
+  igraph,
+  tidygraph,
+  leaflet,
+  ggplot2,
+  ggraph,
+  tidyr,
+  lwgeom
+)
 
 shinyServer(function(input, output, session) {
   
