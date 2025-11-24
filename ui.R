@@ -293,7 +293,6 @@ shinyUI(
                              )
                      ),
                      
-                     
                      # maps ----
                      tabItem("maps",
                              
@@ -301,10 +300,20 @@ shinyUI(
                                
                                tags$h2("Map of Species' Distributions"),
                                
-                               # Se o arquivo Rmd não existir, isso vai gerar erro. Comente se necessário.
-                               # box(width = 12,
-                               #     htmltools::includeMarkdown('www/scan_eng_text1.Rmd')
-                               # ),
+                               # Se o arquivo Rmd não existir, isso vai gerar erro. Comente se necessário.    #     htmltools::includeMarkdown('www/scan_eng_text1.Rmd')
+                               box(width = 12,                                
+                                   
+                                   tags$div(
+                                     # First paragraph: General instructions and derivation of steps
+                                     tags$p("Upload the shapefile map containing all species’ distributions as unique layers with unique IDs and geometries. All SCAN steps are derived from these maps: Spatial similarities (Cs), Scanning algorithm, and Plotting results."),
+                                     
+                                     # Second paragraph: Data requirements (column names)
+                                     tags$p("Maps must have, at least, one ID column named ‘sp’, and a ‘geometry’ column (these exact names). If not, chose among the current names (listed after loading the shape for the first time) and write the name of the ID column in the box before loading the the map again. Information about species and geographical projections are also displayed. Check all important details before taking the next steps."),
+                                     
+                                     # Third paragraph: Troubleshooting and performance warnings
+                                     tags$p("Note: Individual species’ layers may be corrupted for many reasons (invalid species are displayed below the no invalid species is the expected info). Sometimes a projection transformation (CRS) of the whole shapefile may fix it; to do so, mark the checkbox (below) and choose another EPSG number (see https://epsg.io)[see https://epsg.io]. SCAN_eng can also apply sf::st_make_valid to try to fix individual species layers (check box). If these procedures are not enough to fix all species you may try to filter out these before loading the map. Be aware that, for large datasets, Shiny may take a long time to run accros each and the whole process as well.")
+                                   )
+                               ),
                                
                                box(width = 7,    
                                    
@@ -613,7 +622,7 @@ shinyUI(
                                      ),
                                      fluidRow(
                                        column(4,
-                                              selectInput("layout", "Graph Layout:", choices = c("nicely", "kk", "fr", "circle", "grid", "random"))
+                                              selectInput("layout", "Graph Layout:", choices = c("nicely", "kk", "fr", "circle", "grid"))
                                        ),
                                        column(4,
                                               checkboxInput("graph_from_csv", "Load Graph from CSV?", value = FALSE)
