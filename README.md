@@ -22,7 +22,6 @@ Unlike previous versions, **SCAN v0.22 runs on modern R versions** (tested on R 
 If you haven't already, please download and install the latest versions:
 1.  **Download R:** [https://cran.r-project.org/](https://cran.r-project.org/)
 2.  **Download RStudio:** [https://posit.co/download/rstudio-desktop/](https://posit.co/download/rstudio-desktop/)
-
 ### Step 2: Install Required Packages
 Open RStudio, copy the code below, paste it into the Console, and press Enter. This will install all necessary dependencies (including the spatial engines).
 
@@ -43,18 +42,21 @@ install.packages(c(
   "lwgeom", 
   "RColorBrewer"
 ))
-
-The **paper** is [here](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0245818) !
-
-SCAN - *Spatial Congruence Analysis* - is a network analysis bringing an intuitive framework to search for patterns defined by spatially congruent species in biogeography: it allows a deeper understanding of species spatial relationships, and brings pure __spatial congruence__ back as a central, continuous, and explicit parameter in biogeographical analyses.
-
-My **thesis** is also available from [here](https://repositorio.inpa.gov.br/bitstream/1/39803/3/tese_cassiano.pdf) (Intro in Portuguese, Chaps 1 & 2 in English).
-
-Summary by AI
-This doctoral thesis develops and applies a novel biogeographic method, Spatial Congruence Analysis (SCAN), to investigate the distributional patterns of Amazonian birds. SCAN identifies "chorotypes," groups of species with congruent geographic ranges, by analyzing direct and indirect spatial relationships, allowing for the detection of both highly congruent areas (similar to traditional "Areas of Endemism") and distributional gradients. The application of SCAN to Amazonian avifauna reveals a complex biogeographic structure, contradicting recent studies suggesting a lack of significant structuring, and highlights the importance of considering both historical and ecological factors in shaping species distributions. The thesis emphasizes the need to move beyond simplistic vicariance models and incorporate the nuanced interplay of various factors, such as ecological gradients and dispersal routes.
+```
+Step 3: Run SCAN
+Once the packages are installed, you can launch the SCAN Engine directly from GitHub by typing this in your R console:
+```r
+library(shiny)
+# Run SCAN directly from the repository
+runGitHub("SCAN_R_4.5.2", "cassianogatto")
+```
 
 ### Example
 The folder <strong>example</strong> brings a small sample of New World Primate distributions to practice and build your first Chorotypes!
 
 ### Perspectives...
 We are applying the method to the analysis of endemic patterns of South American Birds and Primates (with collaborators). SCAN is super intuitive, allows the gattering of tons of insights about species distributions, and now is fully converted to a standard network analysis (in R). Many network tools and concepts can now be integrated to biogeographical analysis.
+
+The **paper** with concepts is [here](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0245818) 
+
+My **thesis** is also available from [here](https://repositorio.inpa.gov.br/bitstream/1/39803/3/tese_cassiano.pdf) (Intro in Portuguese, Chaps 1 & 2 in English).
