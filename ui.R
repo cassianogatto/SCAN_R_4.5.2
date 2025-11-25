@@ -543,71 +543,158 @@ shinyUI(
                      
                      # SCAN Viewer ----
                      
-                     tabItem("SCAN_viewer",
+                     # SCAN Viewer (Remodelado) ----
+                     tabItem(tabName = "SCAN_viewer",
                              
                              fluidPage(
-                               tags$h2("SCAN Viewer"),
+                               # Título opcional (pode remover se quiser ganhar espaço vertical)
+                               # tags$h2("SCAN Viewer"), 
                                
-                               # 1. CONTROLES
                                fluidRow(
-                                 box(width = 12, title = "Settings", status = "primary", solidHeader = TRUE, collapsible = TRUE, collapsed = FALSE,
-                                     fluidRow(
-                                       column(4, 
-                                              numericInput("threshold", "Threshold (Ct):", value = 0.8, step = 0.05, min = 0, max = 1)
-                                       ),
-                                       column(4,
-                                              uiOutput("original_components") # Checkbox dinâmico
-                                       ),
-                                       column(4,
-                                              sliderInput("map_alpha", "Map Transparency:", min = 0, max = 1, value = 0.5),
-                                              selectInput("palette", "Palette:", choices = c("Set1", "Set2", "Set3", "Paired", "Dark2", "Accent", "Spectral", "RdYlBu"))
-                                       )
-                                     ),
-                                     fluidRow(
-                                       column(4,
-                                              selectInput("layout", "Graph Layout:", choices = c("nicely", "kk", "fr", "circle", "grid", "random"))
-                                       ),
-                                       column(4,
-                                              checkboxInput("graph_from_csv", "Load Graph from CSV?", value = FALSE)
-                                       ),
-                                       column(4,
-                                              conditionalPanel("input.graph_from_csv == true",
-                                                               fileInput("graph_nodes", "Nodes CSV"),
-                                                               fileInput("graph_edges", "Edges CSV")
-                                              )
-                                       )
-                                     )
-                                 )
-                               ),
-                               
-                               # 2. LINHA SUPERIOR: Mapa Estático (Esq) + Rede (Dir)
-                               fluidRow(
-                                 # Quadrante Superior Esquerdo: Mapa Estático
-                                 column(width = 6,
-                                        box(width = NULL, title = "Static Map (ggplot)", status = "info", solidHeader = TRUE,
-                                            plotOutput("ggplot_map", height = "450px") # Altura fixa ajuda no layout
-                                        )
-                                 ),
                                  
-                                 # Quadrante Superior Direito: Rede
-                                 column(width = 6,
-                                        box(width = NULL, title = "Network Graph", status = "warning", solidHeader = TRUE,
-                                            # Usando 'graph_plot' (Simples). Se preferir o detalhado, mude para 'graph_plot2'
-                                            plotOutput("graph_plot", height = "450px") 
+                                 # --- 1. PAINEL LATERAL DE CONTROLE (Largura 3/12) ---
+                                 # Aqui ficam todos os inputs, organizados verticalmente para limpar a tela
+                                 column(width = 3,
+                                        
+                                        # Box 1: Parâmetros Principais
+                                        box(width = NULL, title = "Analysis Parameters", status = "primary", solidHeader = TRUE,
+                                            
+                                            numericInput("threshold", "Threshold (Ct):", value = 0.8, step = 0.05, min = 0, max = 1),
+                                            
+                                            tags$hr(), # Linha separadora
+                                            
+                                            # Renomeado de 'Grupo' para 'Chorotype' conforme sua demanda
+                                            helpText("Filter Chorotypes:"),
+                                            uiOutput("original_components") 
+                                        ),
+                                        
+                                        # Box 2: Configurações Visuais
+                                        box(width = NULL, title = "Visual Settings", status = "warning", solidHeader = TRUE, collapsible = TRUE,
+                                            
+                                            sliderInput("map_alpha", "Map Transparency:", min = 0, max = 1, value = 0.5),
+                                            
+                                            selectInput("palette", "Palette:", 
+                                                        choices = c("Set1", "Set2", "Set3", "Paired", "Dark2", "Accent", "Spectral", "RdYlBu")),
+                                            
+                                            selectInput("layout", "Graph Layout:", 
+                                                        choices = c("nicely", "kk", "fr", "circle", "grid", "random"))
+                                        ),
+                                        
+                                        # Box 3: Dados Externos
+                                        box(width = NULL, title = "External Data", status = "danger", solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
+                                            checkboxInput("graph_from_csv", "Load Graph from CSV?", value = FALSE),
+                                            
+                                            conditionalPanel("input.graph_from_csv == true",
+                                                             fileInput("graph_nodes", "Nodes CSV"),
+                                                             fileInput("graph_edges", "Edges CSV")
+                                            )
                                         )
-                                 )
-                               ),
-                               
-                               # 3. LINHA INFERIOR: Mapa Interativo (Leaflet) ocupando tudo
-                               fluidRow(
-                                 column(width = 12,
-                                        box(width = NULL, title = "Interactive Map (Leaflet)", status = "success", solidHeader = TRUE,
-                                            leafletOutput("map_plot", height = "600px") # Mais alto para exploração
+                                 ), 
+                                 
+                                 # --- 2. ÁREA PRINCIPAL DE VISUALIZAÇÃO (Largura 9/12) ---
+                                 column(width = 9,
+                                        
+                                        # A. Mapa Interativo (Leaflet) - Ganha destaque total no topo
+                                        fluidRow(
+                                          box(width = 12, title = "Interactive Map (Leaflet)", status = "success", solidHeader = TRUE,
+                                              leafletOutput("map_plot", height = "600px") # Altura aumentada para melhor exploração
+                                          )
+                                        ),
+                                        
+                                        # B. Gráficos Secundários (Lado a Lado)
+                                        fluidRow(
+                                          # Mapa Estático
+                                          column(width = 6,
+                                                 box(width = NULL, title = "Static Chorotype Map", status = "info", solidHeader = TRUE, collapsible = TRUE,
+                                                     plotOutput("ggplot_map", height = "350px")
+                                                 )
+                                          ),
+                                          
+                                          # Grafo de Rede
+                                          column(width = 6,
+                                                 box(width = NULL, title = "Network Topology", status = "info", solidHeader = TRUE, collapsible = TRUE,
+                                                     plotOutput("graph_plot", height = "350px")
+                                                 )
+                                          )
+                                        ),
+                                        
+                                        # C. Info Box (Placeholder para o futuro clique)
+                                        fluidRow(
+                                          box(width = 12, title = "Selection Details", status = "primary",
+                                              verbatimTextOutput("interaction_info"),
+                                              helpText("Click on elements in the map to see details (Under Construction).")
+                                          )
                                         )
-                                 )
-                               )
-                             )
+                                 ) 
+                               ) # Fim fluidRow
+                             ) # Fim fluidPage
                      )
+                     
+                     # tabItem("SCAN_viewer",
+                     #         
+                     #         fluidPage(
+                     #           tags$h2("SCAN Viewer"),
+                     #           
+                     #           # 1. CONTROLES
+                     #           fluidRow(
+                     #             box(width = 12, title = "Settings", status = "primary", solidHeader = TRUE, collapsible = TRUE, collapsed = FALSE,
+                     #                 fluidRow(
+                     #                   column(4, 
+                     #                          numericInput("threshold", "Threshold (Ct):", value = 0.8, step = 0.05, min = 0, max = 1)
+                     #                   ),
+                     #                   column(4,
+                     #                          uiOutput("original_components") # Checkbox dinâmico
+                     #                   ),
+                     #                   column(4,
+                     #                          sliderInput("map_alpha", "Map Transparency:", min = 0, max = 1, value = 0.5),
+                     #                          selectInput("palette", "Palette:", choices = c("Set1", "Set2", "Set3", "Paired", "Dark2", "Accent", "Spectral", "RdYlBu"))
+                     #                   )
+                     #                 ),
+                     #                 fluidRow(
+                     #                   column(4,
+                     #                          selectInput("layout", "Graph Layout:", choices = c("nicely", "kk", "fr", "circle", "grid", "random"))
+                     #                   ),
+                     #                   column(4,
+                     #                          checkboxInput("graph_from_csv", "Load Graph from CSV?", value = FALSE)
+                     #                   ),
+                     #                   column(4,
+                     #                          conditionalPanel("input.graph_from_csv == true",
+                     #                                           fileInput("graph_nodes", "Nodes CSV"),
+                     #                                           fileInput("graph_edges", "Edges CSV")
+                     #                          )
+                     #                   )
+                     #                 )
+                     #             )
+                     #           ),
+                     #           
+                     #           # 2. LINHA SUPERIOR: Mapa Estático (Esq) + Rede (Dir)
+                     #           fluidRow(
+                     #             # Quadrante Superior Esquerdo: Mapa Estático
+                     #             column(width = 6,
+                     #                    box(width = NULL, title = "Static Map (ggplot)", status = "info", solidHeader = TRUE,
+                     #                        plotOutput("ggplot_map", height = "450px") # Altura fixa ajuda no layout
+                     #                    )
+                     #             ),
+                     #             
+                     #             # Quadrante Superior Direito: Rede
+                     #             column(width = 6,
+                     #                    box(width = NULL, title = "Network Graph", status = "warning", solidHeader = TRUE,
+                     #                        # Usando 'graph_plot' (Simples). Se preferir o detalhado, mude para 'graph_plot2'
+                     #                        plotOutput("graph_plot", height = "450px") 
+                     #                    )
+                     #             )
+                     #           ),
+                     #           
+                     #           # 3. LINHA INFERIOR: Mapa Interativo (Leaflet) ocupando tudo
+                     #           fluidRow(
+                     #             column(width = 12,
+                     #                    box(width = NULL, title = "Interactive Map (Leaflet)", status = "success", solidHeader = TRUE,
+                     #                        leafletOutput("map_plot", height = "600px") # Mais alto para exploração
+                     #                    )
+                     #             )
+                     #           )
+                     #         )
+                     # )
                    ) # tabItems
                  ) # dashboardBody
   ) # dashboardPage
