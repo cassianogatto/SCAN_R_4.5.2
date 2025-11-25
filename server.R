@@ -2,19 +2,7 @@
 if (!require("pacman")) install.packages("pacman")
 
 # 2. Load all packages (installs them automatically if missing)
-pacman::p_load(
-  shiny,
-  dplyr,
-  sf,
-  igraph,
-  tidygraph,
-  leaflet,
-  ggplot2,
-  ggraph,
-  tidyr,
-  lwgeom,
-  shinydashboard
-)
+pacman::p_load( shiny, dplyr, sf, igraph, tidygraph, DT, leaflet, ggplot2, ggraph, tidyr, lwgeom, shinydashboard )
 
 shinyServer(function(input, output, session) {
   
@@ -466,7 +454,7 @@ shinyServer(function(input, output, session) {
     content = function(file) {  write.csv(dataset_SCAN_ouput(), file, row.names = FALSE)    }
   )
   
-  output$table_download_preview <- renderDataTable({ 
+  output$table_download_preview <- renderDT({ 
     if(is.null(SCANlist())) { return()  } else {  return( dataset_SCAN_ouput() )   }
   })
   
@@ -483,7 +471,7 @@ shinyServer(function(input, output, session) {
                        selected = NULL) 
   })
   
-  output$g_sub_table <- renderDataTable({
+  output$g_sub_table <- renderDT({
     g_sub() |> activate(nodes) |> as_tibble() |>
       group_by(comps) |> summarise(n_spp = n(), species = paste0(name, collapse = ', '))
   })
