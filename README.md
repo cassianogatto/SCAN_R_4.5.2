@@ -1,42 +1,48 @@
 
 
-<h1 style = "float:letf;"> SCAN_engine </h1>
 
-<img height = 60% src = "Psophia.jpg">
+<img  width="300" src = "www/SCAN_logo1.png"><h1 style = "float:letf;"> SCAN_V1 </h1>
+a quantitative framework to identify and map Biogeographical Units (Chorotypes) based on species spatial congruence
+
 
 ### What is SCAN about?
-In Biogeography, the field in biology that studies the spatial distribution of species and the evolution of their environments, there is a pervasive question: - Why unrelated species often have similar geographic distributions?. Following a strict distributional approach, i.e. that considers species' distributions as the main data for analysis, until now, most methods used to address this question did not use the spatial congruence between these distributions as an explicit (and controlable) parameter. The phenomenon of congruence in geographical distributions lead Wallace, the father of Biogeograpy and co-founder of the the Theory of Evolution by Natural Selection, for example, but also many other researchers, to insighst about evolution and ecology of species and environments. Congruence, obviously, has to be the main criterion for any analysis in biogeography based solely in species' distributions.
+In Biogeography, the field in biology that studies the spatial distribution of species and the evolution of their environments, there is a pervasive question: - Why unrelated species often have similar geographic distributions?. The phenomenon of congruence in geographical distributions lead Wallace, the father of Biogeograpy and co-founder of the the Theory of Evolution by Natural Selection, for example, but also many other researchers, to insighst about evolution and ecology of species and environments. Congruence, ideally, should be among the main criteria for any analysis in biogeography based in species' distributions. However, following a strict distributional approach, until now, most methods did not use the spatial congruence between these distributions as an explicit (and controlable) parameter.
 
 SCAN explores species-to-species spatial relationships in an enviroment of a single-layered network analysis. The most obvious spatial patterns of shared distributions are evident when shallow network relationships are found. However, when higher depths in the network are explored a plethora of other spatial relationships can be recognized, including gradients of distribution, that cannot be approapriatelly described by conventional methods and, because of that, are often ignored in the field of biogeography.
-
+<img height = 60% src = "Psophia.jpg">
 ### Why is it important?
 
 The algorithm applies objective criteria regarding the spatial properties of entities, such as raw species' distributions, but can also be extrapolated to the analysis of environments and geographic regions. Recognized patterns may vary from highly congruent, when species have very similar distributions, to patterns where congruent requirement settings are relaxed and more species included. In the later case, continuous gradients can be highlighted by species overlapping or replacing each other along a transitional zone. This flexibility allows the recognition of dynamics and, perhaps, evolution in spatial patterns. More important, it allows the comparison between species and regions based on natural and objective criteria, such as number of congruent species, their level of congruence, the ratio between the shared and total areas of distribution, and many more derived from network analytics.
 
- <table style = "border: 0px">
-  <tr  style = "display: flex">
-   <td width = 50% style = "float:left; align:center; ">
-    <strong>SCAN app repository</strong>
-    <br>
-    <p>)This version is </p>
-    <p> Until there, you have to install <a href = "https://cran.r-project.org/bin/windows/base/old/4.2.2/"> R version 4.2.2</a> in your computer</p>
-    <p> Install <a href = "https://posit.co/downloads/"> RStudio</a> and set <strong>R4.2.2</strong> as the default version (tools/global options/ R general/ R version) -> C:\Program Files\R\R-4.2.2)</p>
-    <p> If needed install 'renv' package in R
-    <code> install.packages("renv")</code>
-    <br>
-    To run SCAN_engine just type in your R console:</p>
-    <code>install.packages(shiny)</code>
-    <br>
-    <code>library(shiny)</code>
-    <br>
-    <code>runGitHub( "cassianogatto/SCAN_engine", "cassianogatto")</code>
-    <br>
-  </td>
-  <td width = 45% style = "float:right; align:right">
-    <img width = 70%  src = "scan_maps_Icterus_Amazilia.png">
-  </td>
- </tr>
- </table>
+## 🚀 Installation & Usage
+
+Unlike previous versions, **SCAN v0.22 runs on modern R versions** (tested on R 4.5.2). You do not need to downgrade your R installation.
+
+### Step 1: Install R and RStudio
+If you haven't already, please download and install the latest versions:
+1.  **Download R:** [https://cran.r-project.org/](https://cran.r-project.org/)
+2.  **Download RStudio:** [https://posit.co/download/rstudio-desktop/](https://posit.co/download/rstudio-desktop/)
+
+### Step 2: Install Required Packages
+Open RStudio, copy the code below, paste it into the Console, and press Enter. This will install all necessary dependencies (including the spatial engines).
+
+```r
+install.packages(c(
+  "shiny",
+  "shinydashboard",
+  "sf",
+  "leaflet",
+  "ggplot2",
+  "dplyr",
+  "igraph",
+  "tidygraph",
+  "ggraph",
+  "readr",
+  "units",
+  "htmltools",
+  "lwgeom", 
+  "RColorBrewer"
+))
 
 The **paper** is [here](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0245818) !
 
