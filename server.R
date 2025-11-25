@@ -1,532 +1,505 @@
-# 1. Install pacman if not already installed
-if (!require("pacman")) install.packages("pacman")
+library(shiny)
+library(shinydashboard)
+library(dplyr)
+library(igraph)
+library(tidygraph)
+library(tidyr)
+library(ggraph)
+library(readr)
+library(sf)
+library(ggplot2)
+library(leaflet)
+library(units)
+library(lwgeom)      # Para corrigir geometrias (st_make_valid)
+library(RColorBrewer)# Para a paleta de cores
+library(DT)          # Para as tabelas modernas
 
-# 2. Load all packages (installs them automatically if missing)
-pacman::p_load( shiny, dplyr, sf, igraph, tidygraph, DT, leaflet, ggplot2, ggraph, tidyr, lwgeom, shinydashboard )
+# Aumentar limite de upload para 100MB (para shapes grandes)
+options(shiny.maxRequestSize=100*1024^2)
+# Desativar geometria esférica para evitar erros de cálculo planar em lat/lon
+sf::sf_use_s2(FALSE)
 
 shinyServer(function(input, output, session) {
   
-  # --- BLOCO DE FUNÇÕES (SOURCE) ---
-  { 
-    # fix igraph's 'to_subgraph' function
-    to_subgraph <- function(graph, ..., subset_by = NULL, delete.vertices = TRUE) {
-      if (is.null(subset_by)) {
-        subset_by <- active(graph)
-      }
-      ind <- as_tibble(graph, active = subset_by)
-      ind <- mutate(ind, .tidygraph_index = seq_len(n()))
-      ind <- filter(ind, ...)
-      ind <- ind$.tidygraph_index
-      subset <- switch(
-        subset_by,
-        nodes = induced_subgraph(graph, ind),
-        edges = subgraph.edges(graph, ind, delete.vertices = delete.vertices)
-      )
-      list(subgraph = as_tbl_graph(subset))
-    }
-    
-    SCAN_lite =  function(graph = C, max_Ct = max(graph %>% activate(edges) %>% as_tibble %>% .$Cs),
-                          min_Ct = 0.76, Ct_resolution = -0.02, max_diameter = 10, mark_overlap = TRUE, 
-                          filter_overlap = FALSE, filter_diameter = FALSE, filter_out_spp = c()    ) {
-      
-      chorotypes = list()
-      g_spp_all = tibble()
-      g_summary_all = tibble()
-      Ct_resolution = ifelse(Ct_resolution > 0, Ct_resolution * (-1), Ct_resolution)
-      if(isTRUE(filter_overlap)) {mark_overlap = TRUE}
-      if(isTRUE(mark_overlap)) {graph = graph %>% activate(nodes) %>% mutate(no_overlap = NA)}
-      
-      # MAIN LOOP --
-      for(threshold in seq(max_Ct,min_Ct,Ct_resolution)){
-        
-        # any species to be filtered out? (1)
-        if(length(filter_out_spp) != 0) {
-          graph = graph %>% morph(to_subgraph, subset_by = "nodes",  name %in% filter_out_spp,
-                                  remove_multiples = TRUE, delete.vertices= TRUE) %>% mutate(filter = 1) %>%
-            unmorph() }
-        
-        # get the communities (components)
-        graph = partial_components(graph = graph, threshold = threshold, filter_diameter = filter_diameter,
-                                   filter_overlap = filter_overlap)
-        
-        # get statistics by component (3)
-        g = map_by_component(graph = graph, threshold = threshold)
-        
-        # filter by diameter (4)
-        g = g %>% activate(nodes) %>%
-          mutate("filter" = ifelse(get(paste0("diameter",threshold)) > max_diameter, threshold, NA))
-        
-        g = g %>% activate(nodes) %>% mutate("betweenness{threshold}" := round(betweenness(g),1))
-        
-        # species' list
-        g_spp = g %>% activate(nodes) %>% as_tibble() %>%
-          group_by(name, get(paste0("components",threshold)), get(paste0("diameter",threshold)),
-                   get(paste0("order",threshold)), get(paste0("centrality",threshold))) %>%
-          summarize(Ct = threshold, betweenness = get(paste0("betweenness",threshold))) %>%
-          select(1,Ct, components = 2, diameter = 3, order = 4, centrality = 5, betweenness) %>%
-          arrange(name)
-        
-        # communities
-        g_summary = g %>% activate(nodes) %>% as_tibble %>% group_by(get(paste0("components",threshold)),
-                                                                     get(paste0("order",threshold))) %>%
-          summarize(Ct = threshold, chorotype_spp = paste(name, collapse = ", "), richness_spp = n(),
-                    diameter = max(get(paste0("diameter",threshold))),
-                    max_centrality = max(get(paste0("centrality",threshold))),
-                    max_betweenness = max(get(paste0("betweenness", threshold)))) %>%
-          select(component = 1, Ct, chorotype_spp, richness_spp, diameter, max_centrality, max_betweenness)
-        
-        # check overlap
-        if(isTRUE(mark_overlap)){
-          
-          g_spp = g_spp %>% mutate(no_overlap = NA)
-          g_summary = g_summary %>% mutate(no_overlap = NA)
-          
-          are_connected = data.frame()
-          for(comp in g_summary$component){
-            spp = g_summary %>% filter(component == comp) %>% pull(.,"chorotype_spp") %>% strsplit(.,", ") %>% .[[1]]
-            
-            for (sp1 in spp){
-              for(sp2 in spp[which(spp != sp1)]){
-                conn = tibble(species1 = sp1, species2 = sp2,
-                              connected = igraph::are.connected(graph, sp1,sp2))
-                are_connected = rbind(are_connected, conn)
-              }        }         }
-          
-          connected_nodes_in_components =  are_connected %>%
-            group_by(species1) %>% summarize(all_connected = ifelse(all(connected), TRUE, FALSE)) %>%
-            left_join(g_spp, by = c("species1" = "name")) %>% select(component = 4, name = 1,2) %>%
-            arrange(component, name)
-          
-          all_connected_components = connected_nodes_in_components %>% group_by(component) %>%
-            summarize(all_connected = ifelse(all(all_connected), TRUE, FALSE))
-          
-          not_connected_components = all_connected_components %>% filter(all_connected == FALSE) %>% pull(.,"component")
-          spp_in_not_connected_components = g_spp %>% filter(components %in% not_connected_components) %>%
-            pull(.,'name')
-          
-          if(length(not_connected_components) > 0 & isTRUE(mark_overlap)) {
-            g_spp = g_spp %>% mutate(no_overlap = replace(NA, name %in% spp_in_not_connected_components, threshold ) )
-            g_summary = g_summary %>% mutate(no_overlap = replace(NA, component %in% not_connected_components, threshold))
-            
-            if(isTRUE(mark_overlap)) {
-              graph = graph %>% morph(to_subgraph, subset_by = "nodes",
-                                      is.na(no_overlap) & name %in% spp_in_not_connected_components,
-                                      remove_multiples = TRUE, delete.vertices= TRUE) %>%
-                mutate(no_overlap = threshold) %>%
-                unmorph()
-            }
-          }
-        }
-        
-        g_spp_all = rbind(g_spp_all, g_spp)
-        g_summary_all = rbind(g_summary_all, g_summary)
-        
-      }  # main loop ends
-      
-      if(isTRUE(mark_overlap)){
-        chorotypes[['chorotypes']] = g_summary_all %>% group_by(chorotype_spp, richness_spp, diameter) %>%
-          summarise(Ct_max = max(Ct), Ct_min = min(Ct), max_centrality = max(max_centrality),
-                    max_betweenness = max(max_betweenness), no_overlap = max(no_overlap)) %>%
-          arrange(chorotype_spp, desc(Ct_max))
-        
-        chorotypes[['all_spp_summary']] = g_spp_all %>% group_by(name, components, order) %>%
-          summarise(max_Ct = max(Ct),
-                    min_Ct = min(Ct), max_diam = max(diameter), min_diam = min(diameter),
-                    max_between = max(betweenness), no_overlap = max(no_overlap))
-      } else {
-        chorotypes[['chorotypes']] = g_summary_all %>% group_by(chorotype_spp, richness_spp, diameter) %>%
-          summarise(Ct_max = max(Ct), Ct_min = min(Ct), max_centrality = max(max_centrality),
-                    max_betweenness = max(max_betweenness)) %>%
-          arrange(chorotype_spp, desc(Ct_max))
-        
-        chorotypes[['all_spp_summary']] = g_spp_all %>% group_by(name, components, order) %>% summarise(max_Ct = max(Ct),
-                                                                                                        min_Ct = min(Ct), max_diam = max(diameter), min_diam = min(diameter),
-                                                                                                        max_between = max(betweenness))
-      }
-      
-      chorotypes[['all_spp']] = g_spp_all
-      chorotypes[['graph']] = graph
-      
-      chorotypes[["parameters"]] = tibble(max_diameter = max_diameter, max_Ct = max_Ct, min_Ct = min_Ct,
-                                          Ct_resolution = Ct_resolution, mark_overlap = mark_overlap,
-                                          filter_overlap = filter_overlap, filter_diameter = filter_diameter)
-      
-      return(chorotypes)
-    }
-    
-    partial_components = function (graph = graph, threshold = threshold, filter_diameter = FALSE, filter_depth = FALSE, filter_overlap = FALSE, ...){
-      
-      print("using 'igraph::group_components' - see more options of community structurig in '?group_components'")
-      
-      if(isTRUE(filter_overlap) & isTRUE(filter_diameter)) { graph %>% morph(to_subgraph, subset_by = "edges",
-                                                                             (Cs >= threshold & is.na(.N()$no_overlap[from]) & is.na(.N()$filter[from])), 
-                                                                             remove_multiples = TRUE, delete.vertices= TRUE) %>%
-          activate(edges) %>% mutate("Ct{threshold}" := TRUE) %>%
-          activate(nodes) %>% mutate("Ct{threshold}" := TRUE) %>%
-          mutate("components{threshold}" := group_components("weak")) %>% 
-          unmorph()
-        
-      } else {
-        if(isTRUE(filter_overlap)) {
-          graph %>% morph(to_subgraph, subset_by = "edges",
-                          (Cs >= threshold & is.na(.N()$no_overlap[from])),
-                          remove_multiples = TRUE, delete.vertices= TRUE) %>%
-            activate(edges) %>% mutate("Ct{threshold}" := TRUE) %>%
-            activate(nodes) %>% mutate("Ct{threshold}" := TRUE) %>%
-            mutate("components{threshold}" := group_components("weak")) %>%
-            unmorph()
-        } else {
-          
-          if(isTRUE(filter_diameter)) {
-            graph %>% morph(to_subgraph, subset_by = "edges",
-                            (Cs >= threshold & is.na(.N()$filter[from])),
-                            remove_multiples = TRUE, delete.vertices= TRUE) %>%
-              activate(edges) %>% mutate("Ct{threshold}" := TRUE) %>%
-              activate(nodes) %>% mutate("Ct{threshold}" := TRUE) %>%
-              mutate("components{threshold}" := group_components("weak")) %>% 
-              unmorph()
-          } else{
-            graph %>% morph(to_subgraph, subset_by = "edges", Cs >= threshold,
-                            remove_multiples = TRUE, delete.vertices= TRUE) %>%
-              activate(edges) %>% mutate("Ct{threshold}" := TRUE) %>%
-              activate(nodes) %>% mutate("Ct{threshold}" := TRUE) %>%
-              mutate("components{threshold}" := group_components("weak")) %>%
-              unmorph()
-          }        }        }        }
-    
-    map_by_component = function(graph = graph, threshold = threshold){ 
-      graph %>% activate(edges) %>% filter(!is.na(get(paste0("Ct",threshold)))) %>%
-        activate(nodes) %>% filter(!is.na(get(paste0("Ct",threshold)))) %>%
-        morph(to_split, group_by = get(paste0("components",threshold)), subset_by = "nodes") %>%
-        mutate("diameter{threshold}" := graph_diameter(unconnected = TRUE),
-               "order{threshold}" := graph_order(),
-               "centrality{threshold}" := centrality_degree()) %>%
-        unmorph()
-    }
-    
-    overlapping_species <- function( map = map(), shrink_factor = 0.01, quartiles_to_buffer = c(3,4)) {
-      shrink_factor <- ifelse(shrink_factor < 0, shrink_factor, (-1)*shrink_factor)
-      buffer <- ifelse(map$quantile_area %in% quartiles_to_buffer, sqrt(map$area) * shrink_factor, 0)
-      map <- st_buffer(map, dist = buffer) #(11s)
-      overlapping <- st_intersects(map, map, sparse = F) |> as_tibble() |> 
-        setNames(map$sp) |> mutate(sp1 = map$sp) |> select(sp1, everything()) |> 
-        pivot_longer(cols = !1, names_to = "sp2") |> filter(value) |> filter(sp1 != sp2) |> 
-        filter(!duplicated(paste0(pmax(sp1, sp2), pmin(sp1, sp2))))
-      overlapping
-    }
-    
-    overlap_areas_function <- function(map = map, over = overlapping ){
-      over <- over |> left_join(map, by = c('sp1' = 'sp')) |> select(sp1,sp2, value, geom_sp1 = geometry)
-      over <- over |> left_join(map, by = c('sp2' = 'sp')) |> select(sp1,sp2, value, geom_sp1, geom_sp2 = geometry)
-      over <- over |> rowwise() |> mutate(area_overlap = st_area(st_intersection(geom_sp1, geom_sp2)))
-      over <- over |> rowwise() |> mutate(area_sp1 = st_area(geom_sp1), area_sp2 = st_area(geom_sp2))
-      over <- over |> select(sp1, sp2, area_sp1, area_sp2, area_overlap)
-      over 
-    }
-  }
+  # --- 1. LEITURA E PROCESSAMENTO DO MAPA ---
   
-  # --- MAIN SCRIPT server ---
-  
-  options(shiny.maxRequestSize=1000*1024^2) 
-  
-  # maps and Cs----
-  
-  map_upload <- eventReactive(input$get_map,{
-    shpdf <- input$filemap
-    if(is.null(shpdf)){    return()    }
-    previouswd <- getwd()
-    uploaddirectory <- dirname(shpdf$datapath[1])
-    setwd(uploaddirectory)
-    for(i in 1:nrow(shpdf)){   file.rename(shpdf$datapath[i], shpdf$name[i])    }
-    setwd(previouswd)
+  # Reactive para ler o shapefile
+  map_input <- reactive({
+    req(input$filemap)
     
-    # ATUALIZAÇÃO PARA SF (SUBSTITUINDO readOGR)
-    shp_file <- shpdf$name[grep(pattern="\\.shp$", shpdf$name)]
-    map1 <- sf::st_read(dsn = paste(uploaddirectory, shp_file, sep="/"), quiet = TRUE)
-    map1
+    # O input$filemap é um dataframe com 'name' (nome original) e 'datapath' (caminho temporário)
+    # Precisamos renomear os arquivos temporários para os nomes originais para o read_sf funcionar
+    temp_dir <- tempdir()
+    
+    for (i in 1:nrow(input$filemap)) {
+      file.copy(from = input$filemap$datapath[i], 
+                to = file.path(temp_dir, input$filemap$name[i]), 
+                overwrite = TRUE)
+    }
+    
+    # Encontrar o arquivo .shp
+    shp_file <- input$filemap$name[grep("\\.shp$", input$filemap$name)]
+    req(length(shp_file) > 0)
+    
+    # Ler o shapefile
+    st_read(file.path(temp_dir, shp_file), quiet = TRUE)
   })
   
-  map1 <- reactive({
-    map_col <- which(map_upload() |> names() == input$colum_sp_map)
-    if(is.null(map_col)){ return() }
-    map <- map_upload() |> select(sp = map_col, geometry)
-    map <- map |> group_by(sp) |> summarise()
-    return( map )
+  # Informações sobre as colunas do mapa carregado
+  output$map_upload_names <- renderPrint({
+    req(map_input())
+    names(map_input())
   })
   
-  map2 <- reactive({
-    if (isTRUE(input$modify_crs)) {
-      if(st_crs(map1())$epsg != as.numeric(input$map_projection)) { 
-        map <- map1() |> st_transform(crs = input$map_projection)
-      } else { map <- map1() }
-    } else { map <- map1() }
-    return(map)
-  })
-  
-  invalid_map <-  reactive ({ 
-    invalid <- which( ! st_is_valid( map2() ) ) 
-    if( length( invalid ) > 0) {return( invalid )} else { return( c() ) }
-  })
-  
-  output$invalid_map_species <- renderTable( 
-    map2()[invalid_map(), ] |>  st_drop_geometry() |> select(sp) |> summarise(invalid_species = paste(sp, collapse = ', '))  
-  )
-  
+  # Reactive principal do Mapa (com correções e renomeação de colunas)
   map <- reactive({
-    if( isTRUE(input$fix_invalid_shapes) & ( length(invalid_map() ) > 0 ) ) {           
-      map <- map2()
-      map[invalid_map(),] <- st_make_valid(map[invalid_map(), ]) 
-    } else { map <- map2() }
-    return(map)
+    req(map_input())
+    dados <- map_input()
+    
+    # Renomear coluna de espécie para 'sp' se necessário
+    col_name_sp <- input$colum_sp_map
+    if(col_name_sp %in% names(dados) && col_name_sp != "sp") {
+      names(dados)[names(dados) == col_name_sp] <- "sp"
+    }
+    
+    # Transformar CRS se solicitado
+    if(input$modify_crs && !is.na(input$map_projection)) {
+      dados <- st_transform(dados, crs = input$map_projection)
+    }
+    
+    # Tentar corrigir geometrias inválidas
+    if(input$fix_invalid_shapes) {
+      # Requer pacote lwgeom
+      dados <- st_make_valid(dados)
+    }
+    
+    return(dados)
   })
   
-  overlapping <- reactive({ 
-    map_areas = st_area(map())
-    map <- map() |> mutate(area = map_areas)
-    map <- map() |> mutate(quantile_area = as.integer(cut(map_areas, quantile(map_areas))))
-    map <- map |> mutate(quantile_area = ifelse(is.na(quantile_area), 1, quantile_area))
-    
-    shrink_factor <- ifelse(input$shrink_factor_buff < 0, input$shrink_factor_buff, (-1) * input$shrink_factor_buff)
-    buffer <- ifelse( map$quantile_area %in% input$quantiles_to_buffer, sqrt(map_areas) * shrink_factor, 0 )
-    map <- st_buffer(map, dist = buffer)
-    
-    overlapping <- st_intersects(map, map, sparse = F) |> as_tibble() |> 
-      setNames(map$sp) |> mutate(sp1 = map$sp) |> select(sp1, everything()) |> 
-      pivot_longer(cols = !1, names_to = "sp2") |> filter(value) |> filter(sp1 != sp2) |> 
-      filter(!duplicated(paste0(pmax(sp1, sp2), pmin(sp1, sp2))))
-    
-    overlapping
+  # Identificar espécies inválidas
+  invalid_map <- reactive({
+    req(map())
+    !st_isValid(map())
   })
   
-  Cs_calc <- eventReactive(input$calculate_Cs, {
-    req( map() )
-    
-    # MANTENDO sf_use_s2(FALSE) PARA COMPATIBILIDADE GEOMÉTRICA COM VERSÃO ANTIGA
-    sf_use_s2(FALSE)
-    
-    areas_df <- overlapping() |> left_join( map(), by = c('sp1' = 'sp')) |> select(sp1,sp2, value, geom_sp1 = geometry)
-    areas_df <- areas_df |> left_join( map(), by = c('sp2' = 'sp')) |> select(sp1,sp2, value, geom_sp1, geom_sp2 = geometry)
-    areas_df <- areas_df |> rowwise() |> mutate(area_overlap = st_area(st_intersection(geom_sp1, geom_sp2)))
-    areas_df <- areas_df |> rowwise() |> mutate(area_sp1 = st_area(geom_sp1), area_sp2 = st_area(geom_sp2))
-    areas_df <- areas_df |> select(sp1, sp2, area_sp1, area_sp2, area_overlap)
-    areas_df <- areas_df |> units::drop_units()
-    
-    Cs_calc <- areas_df |> mutate( Cs = eval( parse( text = input$cs_similarity_index ) ) ) 
-    Cs_calc <- Cs_calc |> filter(Cs >= input$filter_Cs) |>  select(sp1,sp2, Cs) |> arrange(desc(Cs)) |> mutate(Cs = round(Cs, 3))
-    Cs_calc
-  })
-  
-  Cs_up <- reactive({
-    req(input$Cs_table)
-    Cs_file <- input$Cs_table
-    Cs_upload <- read.csv(Cs_file$datapath, header = TRUE) |> as_tibble() |> select(sp1,sp2,Cs)
-    return(Cs_upload)
-  })
-  
-  Cs <- reactive( {
-    if(isTRUE(input$Cs_upload_csv)) {  return(  Cs_up()  |> filter(Cs > input$filter_Cs )  )
+  output$invalid_map_species <- renderTable({
+    req(map())
+    if(any(invalid_map())) {
+      map() |> filter(!st_isValid(geometry)) |> select(sp) |> st_drop_geometry()
     } else {
-      return(  Cs_calc() |> filter(Cs > input$filter_Cs )  )  }
-  })
-  
-  graph <- reactive({
-    graph <- Cs() |> as_tbl_graph( from = sp1, to = sp2, directed = FALSE )
-    graph <- graph %>% igraph::simplify(remove.multiple = TRUE, remove.loops = FALSE, edge.attr.comb="first")
-    graph <- graph %>% as_tbl_graph(directed = FALSE)
-    return(graph)
-  })
-  
-  SCANlist <- eventReactive( input$run_scan, {
-    req(graph())
-    thres_max <- input$threshold_max
-    while(thres_max >= max_thres_graph()) {  thres_max <- thres_max - input$resolution  }
-    
-    SCANlist <- SCAN_lite(
-      graph = graph(),
-      max_Ct =  thres_max,
-      min_Ct =  input$threshold_min,
-      Ct_resolution =  input$resolution,
-      max_diameter = input$max_diameter,
-      mark_overlap = input$overlap,
-      filter_overlap = input$overlap
-    )
-    
-    SCANlist[['graph_nodes']] <- SCANlist[['graph']] |> activate(nodes) |> as_tibble()
-    SCANlist[['graph_edges']] <- SCANlist[['graph']] |> activate(edges) |> as_tibble()
-    return(SCANlist)
-  })
-  
-  dataset_SCAN_ouput <- reactive({
-    switch(input$scan_data_to_download,
-           "chorotypes" = SCANlist()[['chorotypes']],
-           "all_spp_summary" = SCANlist()[['all_spp_summary']],
-           "all_spp" = SCANlist()[['all_spp']],
-           "parameters" = SCANlist()[['parameters']],
-           "graph_nodes" = SCANlist()[['graph_nodes']],
-           "graph_edges" = SCANlist()[['graph_edges']]
-    )
-  }) 
-  
-  max_thres_graph <- reactive({ graph() |> activate(edges) |> as_tibble() |> summarise(max(Cs)) |> unlist() |> round(2)  })
-  
-  threshold <- reactive({   input$threshold   })
-  
-  g_full <- reactive({
-    if(!isTRUE(input$graph_from_csv)){
-      g <- SCANlist()[['graph']]
-      g <- g  |>  activate(edges) %>% select(from, to, Cs) %>%  filter(Cs >= threshold()) %>%
-        activate(nodes) %>% filter(!is.na(get(paste0("components",threshold())))) %>%
-        select( name, comps = paste0('components', threshold() ) ) %>% arrange(comps, name)
-      return(g)
-    } else {      
-      node_file <- input$graph_nodes
-      nodes <- read.csv(node_file$datapath, header = TRUE)
-      edge_file <- input$graph_edges
-      edges <- read.csv(edge_file$datapath, header = TRUE)
-      
-      g <- tbl_graph(nodes = nodes, edges = edges, directed = F)
-      g <- g  |>  activate(edges) %>% select(from, to, Cs) %>%  filter(Cs >= threshold()) %>%
-        activate(nodes) %>% filter(!is.na(get(paste0("components",threshold())))) %>%
-        select( name, comps = paste0('components', threshold() ) ) %>% arrange(comps, name)
-      return(g)
+      data.frame(Status = "No invalid species found!")
     }
   })
   
-  original_components <- reactive({
-    g_full() %>% activate(nodes) %>%  select(comps) %>%
-      arrange(comps) %>% pull() %>% unique()
+  output$map_crs <- renderText({
+    req(map())
+    st_crs(map())$input
   })
   
-  g_sub <- reactive({
-    g_sub <- g_full() %>% activate(nodes) %>%
-      filter(comps %in% input$selected_components)
-    g_sub
+  output$map_species <- renderTable({
+    req(map())
+    data.frame(Species = unique(map()$sp))
   })
   
-  g_map <- reactive({
-    g_spp <- g_sub() |> activate(nodes) |> as_tibble()
-    g_map1 <- right_join( map(), g_spp, by = c('sp' = 'name')) %>% select(comps, everything())
+  output$map_shp_names <- renderText({
+    req(map())
+    names(map())
   })
   
-  # OUTPUTS
-  output$map_upload_names <- renderText( paste(map_upload() |> names(), collapse = ', ') )
+  # Plot simples do mapa de entrada
+  output$map_shp <- renderPlot({
+    req(map())
+    ggplot(map()) + geom_sf() + theme_minimal()
+  })
   
-  output$check_Cs_tables <- renderText(
-    paste("Cs.csv table with ", ncol(Cs()), "columns:" , names(Cs())[1], ",",  names(Cs())[2], ",", names(Cs())[3], ", with", nrow(Cs()), "rows" )
-  )
   
-  output$Cs_head <- renderTable(   Cs() |> head()  )
-  output$Cs_tail <- renderTable(   Cs() |> tail()  )
+  # --- 2. CÁLCULO DO CS (Spatial Congruence) ---
+  
+  # Reactive para calcular ou carregar a tabela Cs
+  Cs_table_data <- reactive({
+    # Se o usuário fez upload de um CSV
+    if(input$Cs_upload_csv && !is.null(input$Cs_table)) {
+      return(read_csv(input$Cs_table$datapath))
+    }
+    
+    # Se o usuário clicou para calcular (requer mapa)
+    req(input$calculate_Cs)
+    req(map())
+    
+    # Isolar execução para não recalcular à toa
+    isolate({
+      shapes <- map()
+      
+      # Buffer interno (opcional)
+      if(input$use_buffer_map) {
+        # Atenção: st_buffer em graus pode ser problemático, idealmente usar projeção métrica
+        shapes <- st_buffer(shapes, dist = -input$shrink_factor_buff)
+      }
+      
+      # Cálculo das áreas das espécies
+      areas <- shapes |> 
+        mutate(area_sp = st_area(geometry)) |>
+        st_drop_geometry() |>
+        select(sp, area_sp)
+      
+      # Intersecção (Overlap)
+      # Isso pode demorar para muitos polígonos!
+      intersections <- st_intersection(shapes, shapes)
+      
+      # Calcular área de overlap
+      # Filtrar onde sp.1 != sp.2 para evitar auto-comparação (embora Cs=1)
+      # E evitar duplicatas (A-B e B-A são iguais para Cs simétrico)
+      cs_data <- intersections |>
+        filter(sp != sp.1) |> # sp vem do x, sp.1 vem do y
+        mutate(area_overlap = st_area(geometry)) |>
+        st_drop_geometry() |>
+        select(sp1 = sp, sp2 = sp.1, area_overlap)
+      
+      # Juntar com áreas totais
+      cs_final <- cs_data |>
+        left_join(areas, by = c("sp1" = "sp")) |>
+        rename(area_sp1 = area_sp) |>
+        left_join(areas, by = c("sp2" = "sp")) |>
+        rename(area_sp2 = area_sp)
+      
+      # Calcular Índice Cs
+      # Fórmula padrão (Hargrove): (Overlap/Area1) * (Overlap/Area2)
+      if(input$use_alternative_index && nchar(input$cs_similarity_index) > 0) {
+        # Avaliar fórmula customizada (perigoso, mas flexível)
+        # Requer que a string seja uma expressão válida usando as colunas
+        expr <- parse(text = input$cs_similarity_index)
+        cs_final <- cs_final |> mutate(Cs = eval(expr))
+      } else {
+        cs_final <- cs_final |> 
+          mutate(Cs = (as.numeric(area_overlap) / as.numeric(area_sp1)) * (as.numeric(area_overlap) / as.numeric(area_sp2)))
+      }
+      
+      return(cs_final |> select(sp1, sp2, Cs))
+    })
+  })
+  
+  # Outputs da aba Cs
+  output$check_Cs_tables <- renderText({
+    req(Cs_table_data())
+    paste("Rows:", nrow(Cs_table_data()), " | Columns:", paste(names(Cs_table_data()), collapse=", "))
+  })
+  
+  output$Cs_head <- renderTable({ req(Cs_table_data()); head(Cs_table_data()) })
+  output$Cs_tail <- renderTable({ req(Cs_table_data()); tail(Cs_table_data()) })
   
   output$download_Cs <- downloadHandler(
-    filename = function() { paste("Cs_table", ".csv", sep = "")  },
-    content = function(file) {  write.csv(Cs(), file, row.names = FALSE)    }
+    filename = function() { "Cs_matrix.csv" },
+    content = function(file) { write_csv(Cs_table_data(), file) }
   )
   
-  output$map_species <- renderTable(   map() |> st_drop_geometry() |> select(sp) |> summarise(species = paste(sp,collapse = ', '))  )
-  output$map_shp_names <- renderText(   paste(map() |> names(), collapse = '-    /    -')  )
-  output$map_crs <- renderText(  paste( st_crs(map()) ) )
   
-  output$map_shp <- renderPlot(
-    map_shp <- if(nrow(map()) > 250) { 
-      map()[1:200, "sp" ] |>  plot(col = sf.colors(categorical = TRUE, alpha = 0.5)) 
-    } else {  
-      map()[, "sp"] |> plot(col = sf.colors(categorical = TRUE, alpha = 0.5)) 
-    }  
-  )
+  # --- 3. SCAN ANALYSIS (Network & Chorotypes) ---
   
-  output$graph_nodes <- renderTable(  graph() |> activate(nodes) |> as_tibble() |> head() )
-  output$graph_edges <- renderTable(  graph() |> activate(edges) |> as_tibble() |> head() )
+  SCANlist <- eventReactive(input$run_scan, {
+    req(Cs_table_data())
+    
+    # Filtros iniciais
+    cs_filtered <- Cs_table_data() |> 
+      filter(Cs >= input$threshold_min)
+    
+    # Criar grafo completo inicial
+    g_full <- as_tbl_graph(cs_filtered, directed = FALSE)
+    
+    # Lista para guardar resultados
+    results <- list()
+    chorotypes_df <- data.frame()
+    
+    # Loop pelos thresholds (Ct)
+    thresholds <- seq(input$threshold_min, input$threshold_max, by = input$resolution)
+    
+    withProgress(message = 'Running SCAN...', value = 0, {
+      
+      for(ct in thresholds) {
+        incProgress(1/length(thresholds), detail = paste("Threshold:", ct))
+        
+        # 1. Filtrar arestas pelo Ct atual
+        # Ativar arestas, filtrar, reativar nós para remover isolados
+        g_temp <- g_full |>
+          activate(edges) |>
+          filter(Cs >= ct) |>
+          activate(nodes) |>
+          mutate(degree = centrality_degree()) |>
+          filter(degree > 0) 
+        
+        # 2. Identificar componentes (comunidades)
+        # Usando 'group_components' do tidygraph (wrapper do igraph::components)
+        comps <- g_temp |> 
+          activate(nodes) |>
+          mutate(component_id = group_components()) |>
+          as_tibble()
+        
+        # Se não houver componentes, pular
+        if(nrow(comps) == 0) next
+        
+        # 3. Validar Chorótipos (Overlap Total / Diâmetro)
+        # Agrupar espécies por componente
+        comp_list <- split(comps$name, comps$component_id)
+        
+        for(cid in names(comp_list)) {
+          spp_in_group <- comp_list[[cid]]
+          
+          # Ignorar grupos com apenas 1 espécie (opcional, mas comum em chorótipos)
+          if(length(spp_in_group) < 2) next
+          
+          # Verificar critério de Clique (Overlap total) se solicitado
+          is_valid <- TRUE
+          if(input$overlap) {
+            # Subgrafo do grupo
+            g_sub <- g_temp |> filter(name %in% spp_in_group)
+            # Densidade = 1 significa clique (todos conectados)
+            if(igraph::edge_density(g_sub) < 1) is_valid <- FALSE
+          }
+          
+          # Verificar Diâmetro se solicitado
+          if(is_valid && input$filter_diameter) {
+            g_sub <- g_temp |> filter(name %in% spp_in_group)
+            if(igraph::diameter(g_sub) > input$max_diameter) is_valid <- FALSE
+          }
+          
+          # Se passou nos filtros, salvar
+          if(is_valid) {
+            chorotypes_df <- rbind(chorotypes_df, data.frame(
+              Threshold = ct,
+              Chorotype_ID = paste0("Ct", ct, "_G", cid),
+              Species = spp_in_group,
+              N_Species = length(spp_in_group)
+            ))
+          }
+        }
+      }
+    }) # fim progress
+    
+    # Preparar listas finais
+    results[['chorotypes']] <- chorotypes_df
+    results[['parameters']] <- data.frame(
+      Min_Ct = input$threshold_min,
+      Max_Ct = input$threshold_max,
+      Resolution = input$resolution,
+      Overlap_Check = input$overlap,
+      Diameter_Check = input$filter_diameter
+    )
+    results[['graph']] <- g_full # Rede completa para visualização
+    results[['all_spp']] <- unique(c(Cs_table_data()$sp1, Cs_table_data()$sp2))
+    
+    # Nós e Arestas para exportação
+    results[['graph_nodes']] <- g_full |> activate(nodes) |> as_tibble()
+    results[['graph_edges']] <- g_full |> activate(edges) |> as_tibble()
+    
+    return(results)
+  })
   
-  output$test_graph_head <- renderPlot(    (graph() |> activate(edges) |> filter(Cs > 0.5) |> create_layout(layout = "kk") |> ggraph()) + theme_bw() )
+  # --- OUTPUTS DE TABELAS (CORRIGIDO COM DT) ---
   
-  output$scan_chorotypes <- renderTable( SCANlist()[['chorotypes']] |> arrange(desc(Ct_max)))
-  output$parameters <- renderTable({   SCANlist()[['parameters']]  })
+  output$parameters <- renderTable({
+    req(SCANlist())
+    SCANlist()[['parameters']]
+  })
   
-  # DOWNLOAD
-  output$names_scan_list <- renderUI({   
-    names <- names(SCANlist())
-    selectInput(inputId = "scan_data_to_download", label = "Choose a SCAN dataset preview (below) or download", choices = names[names !="graph"] )
-  }) 
+  output$scan_chorotypes <- renderTable({
+    req(SCANlist())
+    head(SCANlist()[['chorotypes']], 20) # Mostrar só as primeiras
+  })
+  
+  # Lista dinâmica de arquivos para download
+  output$names_scan_list <- renderUI({
+    req(SCANlist())
+    selectInput("scan_data_to_download", "Choose table to download/view:", 
+                choices = c("Chorotypes" = "chorotypes", 
+                            "Graph Nodes" = "graph_nodes", 
+                            "Graph Edges" = "graph_edges",
+                            "Parameters" = "parameters"))
+  })
+  
+  # Tabela de Preview (CORRIGIDO: renderDT + switch fix)
+  dataset_SCAN_ouput <- reactive({
+    req(SCANlist(), input$scan_data_to_download)
+    
+    # Garantir input único (correção do erro 'switch vector length')
+    selected <- input$scan_data_to_download[1]
+    
+    switch(selected,
+           "chorotypes" = SCANlist()[['chorotypes']],
+           "graph_nodes" = SCANlist()[['graph_nodes']],
+           "graph_edges" = SCANlist()[['graph_edges']],
+           "parameters" = SCANlist()[['parameters']]
+    )
+  })
+  
+  output$table_download_preview <- renderDT({
+    req(dataset_SCAN_ouput())
+    datatable(dataset_SCAN_ouput(), options = list(pageLength = 5, scrollX = TRUE))
+  })
   
   output$downloadData <- downloadHandler(
-    filename = function() { paste(input$scan_data_to_download, ".csv", sep = "")  },
-    content = function(file) {  write.csv(dataset_SCAN_ouput(), file, row.names = FALSE)    }
+    filename = function() { paste0(input$scan_data_to_download, ".csv") },
+    content = function(file) { write_csv(dataset_SCAN_ouput(), file) }
   )
   
-  output$table_download_preview <- renderDT({ 
-    if(is.null(SCANlist())) { return()  } else {  return( dataset_SCAN_ouput() )   }
-  })
   
-  # viewer
-  pal <- reactive({ 
-    colorBin(palette = input$palette, domain = unique(g_map()$comps), bins = 7)
-  })
+  # --- 4. SCAN VIEWER (Visualização Interativa) ---
   
+  # Atualizar checkbox de chorótipos baseado no Threshold escolhido
   output$original_components <- renderUI({
-    checkboxGroupInput(inputId = "selected_components", 
-                       label = paste("Choose the chorotypes at Ct =", threshold() ) , 
-                       choices = original_components(), 
-                       inline = TRUE, 
-                       selected = NULL) 
-  })
-  
-  output$g_sub_table <- renderDT({
-    g_sub() |> activate(nodes) |> as_tibble() |>
-      group_by(comps) |> summarise(n_spp = n(), species = paste0(name, collapse = ', '))
-  })
-  
-  # --- INÍCIO DA PARTE 2 INCORPORADA ---
-  
-  output$map_plot <- renderLeaflet({  
-    g_map() |> leaflet() |> 
-      addProviderTiles("Esri.WorldTopoMap") %>%
-      addPolygons(  weight = 1,  fillColor = ~ pal()(comps), color = "black", dashArray = "1", fillOpacity = input$map_alpha  ) 
-  })
-  
-  output$ggplot_map <- renderPlot({
-    # Ajuste: uso seguro de st_geometry e st_coordinates no pacote sf
-    gmap_points <- cbind(g_map() |> st_drop_geometry(), st_coordinates(st_centroid(st_geometry(g_map()))))
+    req(SCANlist())
+    df <- SCANlist()[['chorotypes']]
     
-    ggplot(data = g_map() %>% arrange(comps)|> mutate(comps = as.factor(comps)) )  +
-      geom_sf( aes(fill = comps), 
-               alpha = input$map_alpha, 
-               color = 'black', 
-               show.legend = F) +
-      scale_fill_manual(values = pal()(g_map()$comps)) +
-      ggtitle( paste0(" SCAN - Chorotypes at Ct = ", threshold() ) ) + 
-      geom_text(data= gmap_points, aes(x = X, y = Y, label = sp),
-                color = "black", size = 4, fontface = "italic", check_overlap = TRUE)  +
-      theme_bw()
+    # Filtrar pelo Ct escolhido no input 'threshold' da aba Viewer
+    # Precisamos arredondar para evitar problemas de float (0.8 vs 0.8000001)
+    disp_ct <- input$threshold
+    available_groups <- df |> 
+      filter(abs(Threshold - disp_ct) < 0.001) |> 
+      pull(Chorotype_ID) |> 
+      unique()
+    
+    if(length(available_groups) == 0) return(helpText("No chorotypes at this threshold."))
+    
+    # Extrair apenas o número do ID (ex: "Ct0.8_G1" -> "1") para ficar mais limpo
+    # Assumindo formato gerado acima
+    group_nums <- gsub(".*_G", "", available_groups)
+    names(available_groups) <- paste("Group", group_nums)
+    
+    checkboxGroupInput("selected_chorotypes", "Select Chorotypes to View:",
+                       choices = available_groups,
+                       selected = available_groups[1:min(3, length(available_groups))], # Selecionar os 3 primeiros por padrão
+                       inline = TRUE)
   })
   
+  # Subconjunto de dados para visualização (Mapa e Grafo)
+  g_sub <- reactive({
+    req(SCANlist(), input$threshold, input$selected_chorotypes)
+    
+    # Pegar as espécies dos chorótipos selecionados
+    df <- SCANlist()[['chorotypes']]
+    selected_spp <- df |> 
+      filter(Chorotype_ID %in% input$selected_chorotypes) |>
+      pull(Species) |>
+      unique()
+    
+    req(length(selected_spp) > 0)
+    
+    # Pegar o grafo completo e filtrar
+    # Também precisamos filtrar as arestas pelo threshold visualizado!
+    g_full <- SCANlist()[['graph']]
+    
+    g_view <- g_full |>
+      activate(edges) |>
+      filter(Cs >= input$threshold) |> # Filtra conexões fracas
+      activate(nodes) |>
+      filter(name %in% selected_spp) |> # Filtra espécies selecionadas
+      # Adicionar info de qual grupo pertence (para colorir)
+      # Nota: uma espécie pode estar em múltiplos grupos em teoria, mas aqui vamos simplificar
+      mutate(comps = group_components()) # Recalcula componentes locais para colorir
+    
+    return(g_view)
+  })
+  
+  # Subset do Mapa Geográfico
+  g_map <- reactive({
+    req(g_sub(), map())
+    
+    # Nomes das espécies no grafo filtrado
+    spp_names <- g_sub() |> activate(nodes) |> pull(name)
+    
+    # Filtrar shapefile
+    map_filtered <- map() |> filter(sp %in% spp_names)
+    
+    # Adicionar info de componentes (para cor)
+    # Join com dados do grafo
+    node_data <- g_sub() |> activate(nodes) |> as_tibble() |> select(name, comps)
+    map_final <- map_filtered |> left_join(node_data, by = c("sp" = "name"))
+    
+    return(map_final)
+  })
+  
+  # --- PALETA DE CORES PADRONIZADA ---
+  # Cria uma paleta nomeada fixa para garantir que cores iguais sejam usadas no Leaflet, ggplot e ggraph
+  chorotype_pal <- reactive({
+    req(g_sub())
+    
+    # Identificar todos os componentes únicos (grupos) no subgrafo atual
+    comps_presentes <- g_sub() |> activate(nodes) |> as_tibble() |> pull(comps) |> unique() |> sort()
+    
+    # Gerar cores
+    n_cores <- length(comps_presentes)
+    if(n_cores < 3) n_cores <- 3 # RColorBrewer precisa de min 3
+    
+    # Paleta escolhida no UI
+    pal_name <- input$palette
+    cores <- suppressWarnings(RColorBrewer::brewer.pal(n = n_cores, name = pal_name))
+    
+    # Se precisar de mais cores do que a paleta tem, interpolar
+    if(length(comps_presentes) > length(cores)) {
+      cores <- colorRampPalette(cores)(length(comps_presentes))
+    } else {
+      cores <- cores[1:length(comps_presentes)]
+    }
+    
+    # Nomear o vetor de cores com os IDs dos componentes
+    # Isso garante o mapeamento correto: names(vetor) = ID, value = Cor
+    names(cores) <- comps_presentes
+    
+    return(cores)
+  })
+  
+  
+  # --- VISUALIZADORES ---
+  
+  # 1. Mapa Interativo (Leaflet)
+  output$map_plot <- renderLeaflet({
+    req(g_map(), chorotype_pal())
+    
+    # Criar função de cor baseada na paleta fixa
+    pal_fun <- colorFactor(palette = chorotype_pal(), domain = g_map()$comps)
+    
+    leaflet(g_map()) |>
+      addProviderTiles(providers$CartoDB.Positron) |> # Mapa base clean
+      addPolygons(
+        fillColor = ~pal_fun(comps),
+        fillOpacity = input$map_alpha,
+        color = "black", weight = 1,
+        popup = ~paste("Species:", sp, "<br>Group:", comps)
+      ) |>
+      addLegend("bottomright", pal = pal_fun, values = ~comps, title = "Group")
+  })
+  
+  # 2. Mapa Estático (ggplot)
+  output$ggplot_map <- renderPlot({
+    req(g_map(), chorotype_pal())
+    
+    ggplot(g_map()) +
+      geom_sf(aes(fill = as.factor(comps)), color = "black", size = 0.2, alpha = input$map_alpha) +
+      # Usar scale_fill_manual com a paleta fixa
+      scale_fill_manual(values = chorotype_pal(), name = "Group") +
+      theme_minimal() +
+      labs(title = paste("Chorotypes at Ct =", input$threshold))
+  })
+  
+  # 3. Gráfico de Rede (Simples)
   output$graph_plot <- renderPlot({
+    req(g_sub(), chorotype_pal())
+    
     lay <- create_layout(g_sub(), layout = input$layout)
+    
     ggraph(lay) +
-      geom_edge_link( aes( alpha = (Cs+0.75)) , width = 1.25 , show.legend = FALSE) +
-      geom_node_point( aes( fill = comps),  size = (degree( g_sub(), mode="all") + 15) / 3, shape = 21, show.legend = FALSE) + 
-      
-      # 💥 LINHA CORRIGIDA 💥
-      scale_fill_distiller( direction = 1, palette = input$palette, na.value = "transparent", aesthetics = "fill") +
-      
-      geom_node_text( aes( label = name), size = 3, col = "black", repel= TRUE) +
-      labs( subtitle = paste0("Ct = ", threshold() )) +
-      theme_graph()
+      geom_edge_link(aes(alpha = Cs), width = 1, show.legend = FALSE) +
+      # Nós coloridos pela paleta fixa
+      geom_node_point(aes(fill = as.factor(comps)), size = 5, shape = 21, color = "black") +
+      scale_fill_manual(values = chorotype_pal()) + # <--- AQUI A MÁGICA
+      geom_node_text(aes(label = name), repel = TRUE, size = 3) +
+      theme_graph() +
+      theme(legend.position = "none")
   })
   
-  output$graph_plot2 <- renderPlot({
-    lay <- create_layout(g_sub(), layout = input$layout)
-    ggraph(lay) +
-      geom_edge_link(aes(alpha = (Cs+0.75)) , width = 1.25 , show.legend = FALSE) +
-      geom_node_point(aes(fill = comps), 
-                      size =  (degree(g_sub(), mode="all") + 20) / 4, shape = 21, show.legend = FALSE) +
-      scale_fill_distiller( direction = 1, palette = input$palette, na.value = "transparent", aesthetics = "fill") +
-      geom_node_text(aes(label = name), size = 4, col = "black", repel=TRUE) +
-      labs( subtitle = paste0("Ct = ", threshold() )) +
-      theme_graph()
+  # Tabela de composição dos grupos (na aba Viewer)
+  output$g_sub_table <- renderDT({
+    req(g_sub())
+    df <- g_sub() |> activate(nodes) |> as_tibble() |> select(Group = comps, Species = name, Degree = degree) |> arrange(Group)
+    datatable(df, options = list(pageLength = 5))
   })
-  
-  output$photo <- renderImage({ list( src = file.path("www", "journal.pone.0245818.g004.PNG") ,width = 500, height = 650 
-  )}, deleteFile = FALSE)
   
 })
