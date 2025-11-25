@@ -2,39 +2,36 @@
 
 
 
-## VERSÃO GEMINI ##
-
-#### NEW CALL FOR PACKAGES ####
+# Packages ----
 # 1. Install pacman if not already installed
 if (!require("pacman")) install.packages("pacman")
 
 # 2. Load all packages (installs them automatically if missing)
 pacman::p_load( shiny, dplyr, sf, igraph, tidygraph, DT, leaflet, ggplot2, ggraph, tidyr, lwgeom, shinydashboard )
 
-#### UI ####
-
+# UI ----
 shinyUI(
   
   dashboardPage( skin = 'black',
                  
                  # header ----
-                 dashboardHeader(
-                   titleWidth = 230,        # Set the width to match your sidebar width (230px) so it aligns perfectly
+                 dashboardHeader(         # Set the width to match your sidebar width (230px) so it aligns perfectly # The Image: must be in 'www' folder. # We adjust margin-top to center it vertically and margin-right for spacing
                    
-                   title = span(    "SCAN V_1",                  # The Image: must be in 'www' folder. 
-                                                      # We adjust margin-top to center it vertically and margin-right for spacing
-                     tags$img(src = "SCAN_logo1.png", width = "80px", style = "margin-top: -5px; margin-right: 10px;")
-                     
+                   titleWidth = 210,        
+                   
+                   title = span(   tags$img(src = "SCAN_logo1.png", width = "80px", style = "margin-top: -5px; margin-right: 10px;"),
+                                   
+                                   "SCAN V_1" 
                    )
                  ),
                  
                  # menu sidebar ----
-                 dashboardSidebar( width = '230px',
+                 dashboardSidebar( width = '210px',
                                    
                                    sidebarMenu(
                                      menuItem("about SCAN", tabName = "about_SCAN", icon = icon("info-circle")),
                                      menuItem("Tutorial", tabName = "tutorial", icon = icon("book")), # <--- NEW ITEM HERE
-                                     menuItem("Species Distribution Maps ", tabName = "maps", icon = icon("map")),
+                                     menuItem("Species Distribution Maps", tabName = "maps", icon = icon("map")),
                                      menuItem("Spatial Congruence", tabName = "Cs_tab", icon = icon("calculator")),
                                      menuItem("SCAN Analysis", tabName = "scan", icon = icon("project-diagram")),
                                      menuItem("SCAN Viewer", tabName = "SCAN_viewer", icon = icon("eye"))
@@ -43,7 +40,6 @@ shinyUI(
                  ),
                  
                  dashboardBody(
-                   # Head CSS HTML configs ----
                    tags$head( 
                      tags$style(
                        HTML( 
@@ -65,7 +61,7 @@ shinyUI(
                    
                    tabItems(
                      
-                     #### ABOUT SCAN ####
+                     # About Scan ----
                      
                      tabItem("about_SCAN",
                              fluidPage(
@@ -130,8 +126,7 @@ shinyUI(
                      
                      
                      
-                     #### TUTORIAL TAB GEMINI #### 
-                     # Add this inside tabItems() in your ui.R
+                     # Tutorial----
                      
                      tabItem(tabName = "tutorial",
                              fluidPage(
@@ -241,8 +236,7 @@ shinyUI(
                      ),
                      
                      
-                     #### MAPS ####
-                     # maps ----
+                     # Species Distribution Maps ----
                      tabItem("maps",
                              
                              fluidPage(
@@ -303,7 +297,7 @@ shinyUI(
                                    
                                    verbatimTextOutput( "map_upload_names" ),
                                ),
-                               # map sample ----
+                               # check map ----
                                box( width = 7,
                                     
                                     tags$h3("Map sample"),
@@ -340,6 +334,8 @@ shinyUI(
                                ),
                              )
                      ),
+                     
+                     # Spatial Congruence -----
                      
                      tabItem("Cs_tab",      
                              
@@ -456,7 +452,7 @@ shinyUI(
                              )
                      ),
                      
-                     # SCAN ----
+                     # SCAN Analysis ----
                      tabItem("scan",
                              
                              fluidPage(
@@ -545,13 +541,14 @@ shinyUI(
                              
                      ),
                      
-                     # --- SCAN Viewer Tab --- 24nov2025
+                     # SCAN Viewer ----
+                     
                      tabItem("SCAN_viewer",
                              
                              fluidPage(
                                tags$h2("SCAN Viewer"),
                                
-                               # 1. CONTROLES (Mantivemos igual, colapsável para economizar espaço)
+                               # 1. CONTROLES
                                fluidRow(
                                  box(width = 12, title = "Settings", status = "primary", solidHeader = TRUE, collapsible = TRUE, collapsed = FALSE,
                                      fluidRow(
