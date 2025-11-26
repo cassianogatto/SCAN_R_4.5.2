@@ -453,16 +453,20 @@ shinyServer(function(input, output, session) {
   output$map_plot <- renderLeaflet({
     req(g_map(), chorotype_pal())
     
-    # Criar função de cor baseada na paleta fixa
+    # Criar função de cor baseada na paleta fixa !!! meses para fazer isso e gemini levou 30s
     pal_fun <- colorFactor(palette = chorotype_pal(), domain = g_map()$comps)
     
     leaflet(g_map()) |>
-      addProviderTiles(providers$CartoDB.Positron) |> # Mapa base clean
+      
+      addProviderTiles(providers$CartoDB.Positron,
+                       options = providerTileOptions(noWrap = TRUE) ) |> # Mapa base clean
+      # addProviderTiles(providers$Stadia.StamenToner) 
+      
       addPolygons(
         fillColor = ~pal_fun(comps),
         fillOpacity = input$map_alpha,
         color = "black", weight = 1,
-        popup = ~paste("Species:", sp, "<br>Group:", comps)
+        popup = ~paste("Species:", sp, "<br>Chorotype:", comps)
       ) |>
       addLegend("bottomright", pal = pal_fun, values = ~comps, title = "Group")
   })
