@@ -15,22 +15,18 @@ In biogeography, the field of biology that studies the spatial distribution of s
 
 Can spatial congruence between species be used as criteria for connections in a network of (spatial) relationships in a new framework? Furthermore, a method that could aggregate such pairwise relationships to detect independent, potentially overlapping spatial patterns derived from any subset of species, while simultaneously describing distribution gradients, would address two analytical requirements that have not been combined in previous approaches.
 
-SCAN explores species-to-species spatial relationships within a single-layer network framework. The most evident spatial patterns of shared distributions emerge when shallow network connections are examined. However, when deeper network structures are explored, a plethora of additional spatial relationships can be recognized, including distribution gradients that cannot be appropriately described by conventional methods and are consequently often overlooked in biogeography.
-
 <table>
   <tr>
   <td>
     <img height = 60% src = "Psophia.jpg">
   </td>
   <td>
-    <i>Psophia leucoptera</i> shares its distribution with other birds at the Inambari Endemic Area
+    <i>Psophia leucoptera</i> shares its distribution with other birds at the Inambari Endemic Area, SW Amazonia
   </td>
   </tr>
 </table>
 
-
-### Why is it important?
-The algorithm applies objective criteria to assess the spatial properties of entities such as raw species distributions, though it can be extrapolated to analyze environments and geographic regions. Recognized patterns may range from highly congruent configurations, where species exhibit very similar distributions, to more relaxed assemblages that accommodate greater variation and consequently include more species. The detection of continuous gradients is enhanced when species overlap or replace one another along transitional zones. This flexibility enables the recognition of dynamic processes and, potentially, traces of differential responses to evolutionary or ecological filters imprinted in spatial patterns. More importantly, it facilitates comparisons between species and regions based on natural, objective criteria—including the number of congruent species, their level of congruence, the ratio of shared to total distributional area, and numerous metrics derived from network analytics.
+The algorithm applies objective criteria to assess the spatial properties of entities such as raw species distributions, though it can be extrapolated to analyze environments and geographic regions. Recognized patterns may range from highly congruent configurations, where species exhibit very similar distributions, to more relaxed assemblages that accommodate greater variation and consequently include more species. The detection of continuous gradients is enhanced when species overlap or replace one another along transitional zones. This flexibility enables the recognition of dynamic processes and traces of differential responses to evolutionary or ecological filters imprinted in spatial patterns, while facilitating comparisons between species and regions based on natural, objective criteria—including the number of congruent species, their level of congruence, the ratio of shared to total distributional area, and numerous metrics derived from network analytics.
 
 ## 🚀 Installation & Usage
 Unlike previous versions, **SCAN V 1.0 runs on a current R version** (tested on R 4.5.2). You do not need to downgrade your R installation.
@@ -72,7 +68,7 @@ runGitHub("SCAN_R_4.5.2", "cassianogatto")
 The folder <strong>example</strong> brings a small sample of New World Primate distributions to practice and build your first Chorotypes!
 
 ### Perspectives...
-We are applying the method to the analysis of endemic patterns of South American Birds and Primates (with collaborators). SCAN is super intuitive, allows the gattering of tons of insights about species distributions, and now is fully converted to a standard network analysis (in R). Many network tools and concepts can now be integrated to biogeographical analysis.
+We are applying the method to the analysis of endemic patterns of South American Birds and Primates (with collaborators). SCAN is super intuitive, allows the gattering of new insights about species distributions, and now is fully converted to a standard network analysis (in R). Many network tools and concepts can now be integrated to biogeographical analysis.
 
 The **paper** with concepts is [here](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0245818) 
 
