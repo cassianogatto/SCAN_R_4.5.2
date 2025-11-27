@@ -10,15 +10,12 @@
 ```r 
 SCAN -> Mapping Biogeographical Units (Chorotypes) based on a Network Analysis of Species' Spatial Congruences 
 ```
-
-
 ### What is SCAN about?
-In Biogeography, the field in biology that studies the spatial distribution of species and the evolution of their environments, there is a pervasive question: - Why unrelated species often have similar geographic distributions?. The phenomenon of congruence in geographical distributions lead Wallace, the father of Biogeograpy and co-founder of the the Theory of Evolution by Natural Selection, for example, but also many other researchers, to insighst about evolution and ecology of species and environments. Congruence, ideally, should be among the main criteria for any analysis in biogeography based in species' distributions. However, following a strict distributional approach, until now, most methods did not use the spatial congruence between these distributions as an explicit (and controlable) parameter.
+In biogeography, the field of biology that studies the spatial distribution of species and the evolution of their environments, a pervasive question persists: why do unrelated species often exhibit similar geographic distributions? The phenomenon of distributional congruence inspired Wallace—the father of biogeography and co-founder of the theory of evolution by natural selection—as well as many subsequent researchers, to develop insights about the evolution and ecology of species and environments. Ideally, congruence should be among the primary criteria for any biogeographic analysis based on species distributions. However, following a strict distributional approach, most methods have not employed spatial congruence between distributions as an explicit and controllable parameter.
 
-**How about obtaining direct measures of spatial congruence between species distributions, pairwise, and using them as criteria for connection in a network of spatial relationships? Furthermore, a method that could aggregate such pairwise relationships to detect independent, potentially overlapping spatial patterns derived from any subset of species, while simultaneously describing distribution gradients, would address two analytical requirements that have not been combined in previous approaches.**
+Can spatial congruence between species be used as criteria for connections in a network of (spatial) relationships in a new framework? Furthermore, a method that could aggregate such pairwise relationships to detect independent, potentially overlapping spatial patterns derived from any subset of species, while simultaneously describing distribution gradients, would address two analytical requirements that have not been combined in previous approaches.
 
-SCAN explores species-to-species spatial relationships in an enviroment of a single-layered network analysis. The most obvious spatial patterns of shared distributions are evident when shallow network relationships are found. However, when higher depths in the network are explored a plethora of other spatial relationships can be recognized, including gradients of distribution, that cannot be approapriatelly described by conventional methods and, because of that, are often ignored in the field of biogeography.
-
+SCAN explores species-to-species spatial relationships within a single-layer network framework. The most evident spatial patterns of shared distributions emerge when shallow network connections are examined. However, when deeper network structures are explored, a plethora of additional spatial relationships can be recognized, including distribution gradients that cannot be appropriately described by conventional methods and are consequently often overlooked in biogeography.
 
 <table>
   <tr>
@@ -33,11 +30,9 @@ SCAN explores species-to-species spatial relationships in an enviroment of a sin
 
 
 ### Why is it important?
-
-The algorithm applies objective criteria regarding the spatial properties of entities, such as raw species' distributions, but can also be extrapolated to the analysis of environments and geographic regions. Recognized patterns may vary from highly congruent, when species have very similar distributions, to patterns where requirements in congruence are relaxed and more species included. In the later case, continuous gradients can be highlighted by species overlapping or replacing each other along a transitional zone. This flexibility allows the recognition of dynamics and, perhaps, evolution in spatial patterns. More important, it allows the comparison between species and regions based on natural and objective criteria, such as number of congruent species, their level of congruence, the ratio between the shared and total areas of distribution, and many more derived from network analytics.
+The algorithm applies objective criteria to assess the spatial properties of entities such as raw species distributions, though it can be extrapolated to analyze environments and geographic regions. Recognized patterns may range from highly congruent configurations, where species exhibit very similar distributions, to more relaxed assemblages that accommodate greater variation and consequently include more species. The detection of continuous gradients is enhanced when species overlap or replace one another along transitional zones. This flexibility enables the recognition of dynamic processes and, potentially, traces of differential responses to evolutionary or ecological filters imprinted in spatial patterns. More importantly, it facilitates comparisons between species and regions based on natural, objective criteria—including the number of congruent species, their level of congruence, the ratio of shared to total distributional area, and numerous metrics derived from network analytics.
 
 ## 🚀 Installation & Usage
-
 Unlike previous versions, **SCAN V 1.0 runs on a current R version** (tested on R 4.5.2). You do not need to downgrade your R installation.
 
 ### Step 1: Install R and RStudio
