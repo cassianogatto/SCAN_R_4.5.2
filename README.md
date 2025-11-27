@@ -1,54 +1,75 @@
 
 
-<h1 style = "float:letf;"> SCAN_engine </h1>
 
-<img height = 60% src = "Psophia.jpg">
+<div>
+  <h1>
+    <img  width="300" src = "www/SCAN_logo1.png">
+  </h1>
+   </div>
 
+```r 
+SCAN -> Mapping Biogeographical Units (Chorotypes) based on a Network Analysis of Species' Spatial Congruences 
+```
 ### What is SCAN about?
-In Biogeography, the field in biology that studies the spatial distribution of species and the evolution of their environments, there is a pervasive question: - Why unrelated species often have similar geographic distributions?. Following a strict distributional approach, i.e. that considers species' distributions as the main data for analysis, until now, most methods used to address this question did not use the spatial congruence between these distributions as an explicit (and controlable) parameter. The phenomenon of congruence in geographical distributions lead Wallace, the father of Biogeograpy and co-founder of the the Theory of Evolution by Natural Selection, for example, but also many other researchers, to insighst about evolution and ecology of species and environments. Congruence, obviously, has to be the main criterion for any analysis in biogeography based solely in species' distributions.
+In biogeography, the field of biology that studies the spatial distribution of species and the evolution of their environments, a pervasive question persists: why do unrelated species often exhibit similar geographic distributions? The phenomenon of distributional congruence inspired Wallace—the father of biogeography and co-founder of the theory of evolution by natural selection—as well as many subsequent researchers, to develop insights about the evolution and ecology of species and environments. Ideally, congruence should be among the primary criteria for any biogeographic analysis based on species distributions. However, following a strict distributional approach, most methods have not employed spatial congruence between distributions as an explicit and controllable parameter.
 
-SCAN explores species-to-species spatial relationships in an enviroment of a single-layered network analysis. The most obvious spatial patterns of shared distributions are evident when shallow network relationships are found. However, when higher depths in the network are explored a plethora of other spatial relationships can be recognized, including gradients of distribution, that cannot be approapriatelly described by conventional methods and, because of that, are often ignored in the field of biogeography.
+Can spatial congruence between species be used as criteria for connections in a network of (spatial) relationships in a new framework? Furthermore, a method that could aggregate such pairwise relationships to detect independent, potentially overlapping spatial patterns derived from any subset of species, while simultaneously describing distribution gradients, would address two analytical requirements that have not been combined in previous approaches.
 
-### Why is it important?
-
-The algorithm applies objective criteria regarding the spatial properties of entities, such as raw species' distributions, but can also be extrapolated to the analysis of environments and geographic regions. Recognized patterns may vary from highly congruent, when species have very similar distributions, to patterns where congruent requirement settings are relaxed and more species included. In the later case, continuous gradients can be highlighted by species overlapping or replacing each other along a transitional zone. This flexibility allows the recognition of dynamics and, perhaps, evolution in spatial patterns. More important, it allows the comparison between species and regions based on natural and objective criteria, such as number of congruent species, their level of congruence, the ratio between the shared and total areas of distribution, and many more derived from network analytics.
-
- <table style = "border: 0px">
-  <tr  style = "display: flex">
-   <td width = 50% style = "float:left; align:center; ">
-    <strong>SCAN app repository</strong>
-    <br>
-    <p>)This version is </p>
-    <p> Until there, you have to install <a href = "https://cran.r-project.org/bin/windows/base/old/4.2.2/"> R version 4.2.2</a> in your computer</p>
-    <p> Install <a href = "https://posit.co/downloads/"> RStudio</a> and set <strong>R4.2.2</strong> as the default version (tools/global options/ R general/ R version) -> C:\Program Files\R\R-4.2.2)</p>
-    <p> If needed install 'renv' package in R
-    <code> install.packages("renv")</code>
-    <br>
-    To run SCAN_engine just type in your R console:</p>
-    <code>install.packages(shiny)</code>
-    <br>
-    <code>library(shiny)</code>
-    <br>
-    <code>runGitHub( "cassianogatto/SCAN_engine", "cassianogatto")</code>
-    <br>
+<table>
+  <tr>
+  <td>
+    <img height = 60% src = "Psophia.jpg">
   </td>
-  <td width = 45% style = "float:right; align:right">
-    <img width = 70%  src = "scan_maps_Icterus_Amazilia.png">
+  <td>
+    <i>Psophia leucoptera</i> shares its distribution with other birds at the Inambari Endemic Area, SW Amazonia
   </td>
- </tr>
- </table>
+  </tr>
+</table>
 
-The **paper** is [here](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0245818) !
+The algorithm applies objective criteria to assess the spatial properties of entities such as raw species distributions, though it can be extrapolated to analyze environments and geographic regions. Recognized patterns may range from highly congruent configurations, where species exhibit very similar distributions, to more relaxed assemblages that accommodate greater variation and consequently include more species. The detection of continuous gradients is enhanced when species overlap or replace one another along transitional zones. This flexibility enables the recognition of dynamic processes and traces of differential responses to evolutionary or ecological filters imprinted in spatial patterns, while facilitating comparisons between species and regions based on natural, objective criteria—including the number of congruent species, their level of congruence, the ratio of shared to total distributional area, and numerous metrics derived from network analytics.
 
-SCAN - *Spatial Congruence Analysis* - is a network analysis bringing an intuitive framework to search for patterns defined by spatially congruent species in biogeography: it allows a deeper understanding of species spatial relationships, and brings pure __spatial congruence__ back as a central, continuous, and explicit parameter in biogeographical analyses.
+## 🚀 Installation & Usage
+Unlike previous versions, **SCAN V 1.0 runs on a current R version** (tested on R 4.5.2). You do not need to downgrade your R installation.
 
-My **thesis** is also available from [here](https://repositorio.inpa.gov.br/bitstream/1/39803/3/tese_cassiano.pdf) (Intro in Portuguese, Chaps 1 & 2 in English).
+### Step 1: Install R and RStudio
+If you haven't already, please download and install the latest versions:
+1.  **Download R:** [https://cran.r-project.org/](https://cran.r-project.org/)
+2.  **Download RStudio:** [https://posit.co/download/rstudio-desktop/](https://posit.co/download/rstudio-desktop/)
+### Step 2: Install Required Packages
+Open RStudio, copy the code below, paste it into the Console, and press Enter. This will install all necessary dependencies (including the spatial engines).
 
-Summary by AI
-This doctoral thesis develops and applies a novel biogeographic method, Spatial Congruence Analysis (SCAN), to investigate the distributional patterns of Amazonian birds. SCAN identifies "chorotypes," groups of species with congruent geographic ranges, by analyzing direct and indirect spatial relationships, allowing for the detection of both highly congruent areas (similar to traditional "Areas of Endemism") and distributional gradients. The application of SCAN to Amazonian avifauna reveals a complex biogeographic structure, contradicting recent studies suggesting a lack of significant structuring, and highlights the importance of considering both historical and ecological factors in shaping species distributions. The thesis emphasizes the need to move beyond simplistic vicariance models and incorporate the nuanced interplay of various factors, such as ecological gradients and dispersal routes.
+```r
+install.packages(c(
+  "shiny",
+  "shinydashboard",
+  "sf",
+  "leaflet",
+  "ggplot2",
+  "dplyr",
+  "igraph",
+  "tidygraph",
+  "ggraph",
+  "readr",
+  "units",
+  "htmltools",
+  "lwgeom", 
+  "RColorBrewer"
+))
+```
+Step 3: Run SCAN
+Once the packages are installed, you can launch the SCAN Engine directly from GitHub by typing this in your R console:
+```r
+library(shiny)
+# Run SCAN directly from the repository
+runGitHub("SCAN_R_4.5.2", "cassianogatto")
+```
 
 ### Example
 The folder <strong>example</strong> brings a small sample of New World Primate distributions to practice and build your first Chorotypes!
 
 ### Perspectives...
-We are applying the method to the analysis of endemic patterns of South American Birds and Primates (with collaborators). SCAN is super intuitive, allows the gattering of tons of insights about species distributions, and now is fully converted to a standard network analysis (in R). Many network tools and concepts can now be integrated to biogeographical analysis.
+We are applying the method to the analysis of endemic patterns of South American Birds and Primates (with collaborators). SCAN is super intuitive, allows the gattering of new insights about species distributions, and now is fully converted to a standard network analysis (in R). Many network tools and concepts can now be integrated to biogeographical analysis.
+
+The **paper** with concepts is [here](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0245818) 
+
+My **thesis** is also available from [here](https://repositorio.inpa.gov.br/bitstream/1/39803/3/tese_cassiano.pdf) (Intro in Portuguese, Chaps 1 & 2 in English).
