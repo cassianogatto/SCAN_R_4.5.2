@@ -24,7 +24,7 @@ In biogeography, the field of biology that studies the spatial distribution of s
   </tr>
 </table>
 
-Can spatial congruence between species be used as criteria for connections in a network of (spatial) relationships in a new framework? Furthermore, a method that could aggregate such pairwise relationships to detect independent, potentially overlapping spatial patterns derived from any subset of species, while simultaneously describing distribution gradients, would address two analytical requirements that have not been combined in previous approaches.
+What about a framework that proposes spatial congruence between species as the primary criterion for connections in a network of spatial relationships, aggregating such pairwise relationships to detect independent, potentially overlapping spatial patterns while simultaneously describing distribution gradients? Such a framework would address two analytical requirements not previously combined, representing a significant advance in the biogeographical analysis of species distributions.
 
 <table>
   <tr>
