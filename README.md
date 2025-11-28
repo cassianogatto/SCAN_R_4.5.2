@@ -74,7 +74,7 @@ library(shiny)
 runGitHub("SCAN_R_4.5.2", "cassianogatto")
 ```
 ### Step 4: Alternatively, you can download or clone the [SCAN_R_4.5.2](https://github.com/cassianogatto/SCAN_R_4.5.2) directory in your computer.
-Open ui.R and server.R in RStudio and call for the Shiny package:
+After downloading the folder open ui.R and server.R in RStudio, call for the Shiny package, and run the App:
 ```r
 library(shiny)
 # Run SCAN
