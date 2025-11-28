@@ -14,10 +14,14 @@ library(lwgeom)      # Para corrigir geometrias (st_make_valid)
 library(RColorBrewer)# Para a paleta de cores
 library(DT)          # Para as tabelas modernas
 
-# Aumentar limite de upload para 100MB (para shapes grandes)
-options(shiny.maxRequestSize=100*1024^2)
-# Desativar geometria esférica para evitar erros de cálculo planar em lat/lon
+
+# --- 🚀 FIX: INCREASE UPLOAD LIMIT ---
+# Set limit to 500 MB (Default is only 5MB)
+options(shiny.maxRequestSize = 500 * 1024^2) 
+
+# Disable spherical geometry for planar calculations
 sf::sf_use_s2(FALSE)
+
 
 shinyServer(function(input, output, session) {
   
@@ -79,13 +83,13 @@ shinyServer(function(input, output, session) {
   # Identificar espécies inválidas
   invalid_map <- reactive({
     req(map())
-    !st_isValid(map())
+    !st_is_valid(map())
   })
   
   output$invalid_map_species <- renderTable({
     req(map())
     if(any(invalid_map())) {
-      map() |> filter(!st_isValid(geometry)) |> select(sp) |> st_drop_geometry()
+      map() |> filter(!st_is_valid(geometry)) |> select(sp) |> st_drop_geometry()
     } else {
       data.frame(Status = "No invalid species found!")
     }
