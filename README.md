@@ -41,7 +41,6 @@ The algorithm applies objective criteria to assess the spatial properties of ent
 
 ## 🚀 Installation & Usage
 Unlike previous versions, **SCAN V 1.0 runs on a current R version** (tested on R 4.5.2). You do not need to downgrade your R installation.
-
 ### Step 1: Install R and RStudio
 If you haven't already, please download and install the latest versions:
 1.  **Download R:** [https://cran.r-project.org/](https://cran.r-project.org/)
@@ -67,13 +66,21 @@ install.packages(c(
   "RColorBrewer"
 ))
 ```
-Step 3: Run SCAN
+### Step 3: Run SCAN
 Once the packages are installed, you can launch the SCAN Engine directly from GitHub by typing this in your R console:
 ```r
 library(shiny)
 # Run SCAN directly from the repository
 runGitHub("SCAN_R_4.5.2", "cassianogatto")
 ```
+### Step 4: Alternatively, you can download or clone the [SCAN_R_4.5.2](https://github.com/cassianogatto/SCAN_R_4.5.2) directory in your computer.
+Open ui.R and server.R in RStudio and call for the Shiny package:
+```r
+library(shiny)
+# Run SCAN
+shiny::runApp('C:/SCAN_R4.5.2')
+```
+Or use the "run App" buttom to start the SCAN shiny app
 
 ### Example
 The folder <strong>example</strong> brings a small sample of New World Primate distributions to practice and build your first Chorotypes!
