@@ -16,7 +16,7 @@ In **Biogeography**, the field of biology that studies the spatial distribution 
 <table>
   <tr>
   <td>
-    <img height = 60% src = "www/Psophia.jpg">
+    <img height = 80% src = "www/Psophia.jpg">
   </td>
   <td>
     <i>Psophia leucoptera</i> shares its distribution with other birds at the Inambari Endemic Area, SW Amazonia
@@ -29,7 +29,7 @@ What about a framework that proposes spatial congruence between species as the p
 <table>
   <tr>
   <td>
-    <img height = 60% src = "www/Primate_chorotypes_graph.png">
+    <img height = 80% src = "www/Primate_chorotypes_graph.png">
   </td>
   <td>
     <i>Examples of primate chorotypes across Amazonia at a Spatial Congruence Cs = 0.6 - their network structures are show in the right panel
