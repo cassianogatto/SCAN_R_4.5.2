@@ -13,15 +13,26 @@ SCAN -> Mapping Biogeographical Units (Chorotypes) based on a Network Analysis o
 ### What is SCAN about?
 In biogeography, the field of biology that studies the spatial distribution of species and the evolution of their environments, a pervasive question persists: why do unrelated species often exhibit similar geographic distributions? The phenomenon of distributional congruence inspired Wallace—the father of biogeography and co-founder of the theory of evolution by natural selection—as well as many subsequent researchers, to develop insights about the evolution and ecology of species and environments. Ideally, congruence should be among the primary criteria for any biogeographic analysis based on species distributions. However, following a strict distributional approach, most methods have not employed spatial congruence between distributions as an explicit and controllable parameter.
 
+<table>
+  <tr>
+  <td>
+    <img height = 60% src = "www/Psophia.jpg">
+  </td>
+  <td>
+    <i>Psophia leucoptera</i> shares its distribution with other birds at the Inambari Endemic Area, SW Amazonia
+  </td>
+  </tr>
+</table>
+
 Can spatial congruence between species be used as criteria for connections in a network of (spatial) relationships in a new framework? Furthermore, a method that could aggregate such pairwise relationships to detect independent, potentially overlapping spatial patterns derived from any subset of species, while simultaneously describing distribution gradients, would address two analytical requirements that have not been combined in previous approaches.
 
 <table>
   <tr>
   <td>
-    <img height = 60% src = "Psophia.jpg">
+    <img height = 60% src = "www/Primate_chorotypes_graph.png">
   </td>
   <td>
-    <i>Psophia leucoptera</i> shares its distribution with other birds at the Inambari Endemic Area, SW Amazonia
+    <i>Examples of primate chorotypes across Amazonia - their network structures are show in the right panel
   </td>
   </tr>
 </table>
