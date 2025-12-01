@@ -521,12 +521,13 @@ shinyServer(function(input, output, session) {
     lay <- create_layout(g_sub(), layout = input$layout_graph)
     
     ggraph(lay) +
-      geom_edge_link(aes(alpha = Cs), width = 0.5, show.legend = FALSE) + 
+      geom_edge_link(aes(alpha = Cs), width = 1, show.legend = FALSE) + 
       # Nós um pouco menores para caber no box pequeno
-      geom_node_point(aes(fill = as.factor(comps)), size = 3, shape = 21, color = "black") + 
+      geom_node_point(aes(fill = as.factor(comps)), size = 4, shape = 21, color = "black") + 
       scale_fill_manual(values = chorotype_pal()) +
       # Texto com fundo branco semitransparente para ler em cima do mapa
-      geom_node_text(aes(label = name), repel = TRUE, size = 2.5, bg.color = "white", bg.r = 0.1) +
+      geom_node_text(aes(label = name), #repel = TRUE, 
+                     size = 4, bg.color = "white", bg.r = 0.1) +
       
       # TEMA CRUCIAL PARA TRANSPARÊNCIA
       theme_void() + # Remove eixos e grids

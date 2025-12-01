@@ -88,12 +88,11 @@ shinyUI(
                       tags$hr(),
                       tags$h5("Visual Settings:"),
                       
-                      # --- NEW CHECKBOX HERE ---
-                      checkboxInput("show_minigraph", "Show Network Graph", value = TRUE),
-                      # -------------------------
+                      checkboxInput("show_minigraph", "Show Network Graph", value = TRUE),# --- NEW CHECKBOX HERE ---
                       sliderInput("alpha_global", "Transparency:", min=0, max=1, value=0.5, step=0.1),
-                      selectInput("palette_global", "Palette:", choices = c("Set1", "Set2", "Paired", "Dark2", "RdYlBu")),
-                      selectInput("layout_graph", "Graph Layout:", choices = c("nicely", "fr", "circle", "grid"))
+                      selectInput("palette_global", "Palette:", choices = c("Set2", "Set1", "Paired", "Dark2", "RdYlBu")),
+                      selectInput("layout_graph", "Graph Layout:", choices = c( "fr", "nicely" #,"circle", "grid"
+                                                                               ))
                     )
                   ),
                   
@@ -449,14 +448,14 @@ shinyUI(
                     tabItem("static_view",
                             fluidPage(
                               fluidRow(
-                                column(4, 
+                                column(5, 
                                        box(width = NULL, title = "Static Map", status = "primary", solidHeader = TRUE,
-                                           plotOutput("ggplot_map", height = "400px")
+                                           plotOutput("ggplot_map", height = "500px")
                                        )
                                 ),
                                 column(5,
                                        box(width = NULL, title = "Network Topology", status = "primary", solidHeader = TRUE,
-                                           plotOutput("graph_plot", height = "400px")
+                                           plotOutput("graph_plot", height = "500px")
                                        )
                                 ), 
                                 
