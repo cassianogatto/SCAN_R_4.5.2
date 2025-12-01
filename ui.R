@@ -15,35 +15,89 @@ shinyUI(
                   )
                 ),
                 
-                # --- SIDEBAR ---
+                # --- SIDEBAR --- 01dez25 includes 2 separate tabs view + map
                 dashboardSidebar(
-                  width = '230px',
-                  sidebarMenu(
-                    menuItem("About SCAN", tabName = "about_SCAN", icon = icon("info-circle")),
-                    menuItem("Tutorial", tabName = "tutorial", icon = icon("book")),
-                    menuItem("Species Distribution Maps", tabName = "maps", icon = icon("map")),
-                    menuItem("Spatial Congruence", tabName = "Cs_tab", icon = icon("calculator")),
-                    menuItem("SCAN Analysis", tabName = "scan", icon = icon("project-diagram")),
-                    menuItem("SCAN Viewer", tabName = "SCAN_viewer", icon = icon("eye"))
-                  )
-                ),
+                    width = '230px',
+                    sidebarMenu(
+                      id = "sidebar_menu", # <--- ADICIONE ESTE ID (CRUCIAL!)
+                      menuItem("About SCAN", tabName = "about_SCAN", icon = icon("info-circle")),
+                      menuItem("Tutorial", tabName = "tutorial", icon = icon("book")),
+                      menuItem("Species Distribution Maps", tabName = "maps", icon = icon("map")),
+                      menuItem("Spatial Congruence", tabName = "Cs_tab", icon = icon("calculator")),
+                      menuItem("SCAN Analysis", tabName = "scan", icon = icon("project-diagram")),
+                      
+                      # --- SUBSTITUA O ANTIGO VIEWER POR ESTES DOIS ---
+                      menuItem("SCAN Explorer (Map)", tabName = "map_view", icon = icon("globe-americas")),
+                      menuItem("SCAN Details (Plots)", tabName = "static_view", icon = icon("chart-pie"))
+                    )
+                  ),
                 
                 # --- BODY ---
                 dashboardBody(
                   # Custom CSS
                   tags$head(
-                    tags$style(HTML("
-          .content { background-color: white; }
-          .box.box-solid.box-primary>.box-header { background-color: #3c8dbc; color: #fff; }
-          .box.box-solid.box-warning>.box-header { background-color: #f39c12; color: #fff; }
-          .box.box-solid.box-danger>.box-header { background-color: #dd4b39; color: #fff; }
-          .box.box-solid.box-success>.box-header { background-color: #00a65a; color: #fff; }
-          .btn-warning { background-color: #f39c12; border-color: #e08e0b; color: white; }
-          .btn-danger { background-color: #dd4b39; border-color: #d73925; color: white; }
-          /* Alignment fix for buttons next to inputs */
-          .align-btn { margin-top: 25px; } 
-        "))
+                    tags$style(HTML("        /* --- NOVO CSS PARA O LAYOUT GLOBAL 01dez25 --- */
+                      .full-screen-map {
+                        height: calc(100vh - 50px) !important;
+                        position: relative;
+                        margin: -15px; /* Remove margens do dashboard */
+                        z-index: 0;
+                      }
+                      .floating-panel { 
+                        background-color: rgba(255,255,255,0.95); 
+                        padding: 20px; 
+                        border-radius: 8px; 
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                        z-index: 1050; /* Garante que fique acima do mapa e do conteúdo */
+                        max-height: 90vh;
+                        overflow-y: auto;
+                      }
+                      .content { background-color: white; }
+                      .box.box-solid.box-primary>.box-header { background-color: #3c8dbc; color: #fff; }
+                      .box.box-solid.box-warning>.box-header { background-color: #f39c12; color: #fff; }
+                      .box.box-solid.box-danger>.box-header { background-color: #dd4b39; color: #fff; }
+                      .box.box-solid.box-success>.box-header { background-color: #00a65a; color: #fff; }
+                      .btn-warning { background-color: #f39c12; border-color: #e08e0b; color: white; }
+                      .btn-danger { background-color: #dd4b39; border-color: #d73925; color: white; }
+                      /* Alignment fix for buttons next to inputs */
+                      .align-btn { margin-top: 25px; } 
+                    "))
                   ),
+                  
+                  # --- 1. PAINEL DE CONTROLE GLOBAL (FLUTUANTE) ---
+                  # Aparece apenas nas abas 'map_view' OU 'static_view'
+                  conditionalPanel(
+                    condition = "input.sidebar_menu == 'map_view' || input.sidebar_menu == 'static_view'",
+                    
+                    absolutePanel(
+                      id = "global_controls", 
+                      class = "floating-panel",
+                      top = 60, right = 20, width = 350,
+                      draggable = TRUE, 
+                      
+                      tags$h3(icon("cogs"), "SCAN Explorer (floating box)"),
+                      
+                      # Controle ÚNICO de Threshold
+                      sliderInput("threshold_global", "Threshold (Ct):", min=0, max=1, value=0.5, step=0.05),
+                      
+                      tags$hr(),
+                      tags$h5("Select Chorotypes:"),
+                      # O conteúdo dos checkboxes será gerado no server
+                      uiOutput("chorotype_selector_global"),
+                      
+                      tags$hr(),
+                      tags$h5("Visual Settings:"),
+                      
+                      # --- NEW CHECKBOX HERE ---
+                      checkboxInput("show_minigraph", "Show Network Graph", value = TRUE),
+                      # -------------------------
+                      sliderInput("alpha_global", "Transparency:", min=0, max=1, value=0.5, step=0.1),
+                      selectInput("palette_global", "Palette:", choices = c("Set1", "Set2", "Paired", "Dark2", "RdYlBu")),
+                      selectInput("layout_graph", "Graph Layout:", choices = c("nicely", "fr", "circle", "grid"))
+                    )
+                  ),
+                  
+                  ### TAB ITEMS ----
                   
                   tabItems(
                     
@@ -74,20 +128,20 @@ shinyUI(
                                                        "Each chorotype corresponds to a 'community' in network terminology. In the graph representation, species are vertices (nodes) and links (edges) are Cs values. The map depicts the actual spatial distribution of each component species of a chorotype."
                                                 ),
                                                 tags$p(style = "font-style: italic; margin-top: 15px;",
-                                                       "The description, decision, interpretation and discussion about patterns vs. biogeography is the role of the biogeographer. Please refer to Gatto & Cohn-Haft 2021 for a detailed analysis of these conceptual implications - PlosOne",
+                                                       "SCAN reveals spatial patterns of congruent distributions; interpreting and discussing their biogeographic significance is the biogeographer's task.Please refer to Gatto & Cohn-Haft 2021 for a detailed analysis of these conceptual implications - PlosOne",
                                                        tags$a(href="https://doi.org/10.1371/journal.pone.0245818", "https://doi.org/10.1371/journal.pone.0245818", target="_blank")
                                                 )
                                        )
                                 )
                               ),
                               tags$br(),
-                              fluidRow(
-                                column(10, offset = 1,
-                                       box(width = 12, title = "Abstract (Gatto & Cohn-Haft 2021)", status = "primary", solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
-                                           tags$p(style = "text-align: justify;", "Species with congruent geographical distributions, potentially caused by common historical and ecological spatial processes, constitute biogeographical units called chorotypes...")
-                                       )
-                                )
-                              )
+                              # fluidRow(
+                              #   column(10, offset = 1,
+                              #          box(width = 12, title = "Abstract (Gatto & Cohn-Haft 2021)", status = "primary", solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
+                              #              tags$p(style = "text-align: justify;", "Species with congruent geographical distributions, potentially caused by common historical and ecological spatial processes, constitute biogeographical units called chorotypes...")
+                              #          )
+                              #   )
+                              # )
                             )
                     ),
                     
@@ -359,56 +413,66 @@ shinyUI(
                             )
                     ),
                     
-                    # 6. SCAN VIEWER (SUCCESS - GREEN) ----
-                    tabItem("SCAN_viewer",
+                    # 6. MAP VIEWWER 1: TELA CHEIA (MAPA) ----
+                    tabItem("map_view",
+                            
+                            div(class = "full-screen-map",
+                                
+                                leafletOutput("map_fullscreen", width = "100%", height = "100%"),
+                                
+                                # --- NEW MINI GRAPH PANEL ---
+                                # Only shows if the checkbox in settings is TRUE
+                                conditionalPanel(
+                                  condition = "input.show_minigraph == true",
+                                  
+                                  absolutePanel(
+                                      id = "mini_graph_box",
+                                      
+                                      # Removemos a classe 'floating-panel' para não pegar o fundo branco padrão
+                                      # Definimos estilo manual para ser transparente e compacto
+                                      style = "background-color: rgba(255,255,255,0.4); padding: 5px; border-radius: 10px; z-index: 1000;",
+                                      bottom = 20, left = 20, 
+                                      width = 350, height = 450, # Largura fixa reduzida
+                                      draggable = TRUE,
+                                      
+                                      # Título menor
+                                      tags$h6(icon("stars"), "Network Topology", style = "margin: 0px 0px 5px 5px; font-weight: bold; opacity: 0.7;"),
+                                      
+                                      # Plot menor (200px de altura)
+                                      plotOutput("mini_graph_plot", height = "330px")
+                                    )
+                                  )
+                            )
+                    ),
+                    
+                    # 7: MAP + GRAPH VIEWER ----
+                    tabItem("static_view",
                             fluidPage(
                               fluidRow(
-                                # Control Column
-                                column(width = 2,
-                                       tags$h3("SCAN Viewer"),
-                                       box(width = NULL, title = "Parameters", status = "success", solidHeader = TRUE,
-                                           numericInput("threshold", "Threshold (Ct):", value = 0.5, step = 0.05, min = 0, max = 1),
-                                           tags$hr(),
-                                           uiOutput("original_components") 
-                                       ),
-                                       box(width = NULL, title = "Visual Settings", status = "success", collapsible = TRUE,
-                                           numericInput("map_alpha", "Transparency:", min = 0, max = 1, value = 0.5, step = 0.1),
-                                           selectInput("palette", "Palette:", choices = c("Set1", "Set2", "Set3", "Paired", "Dark2", "RdYlBu")),
-                                           selectInput("layout", "Layout:", choices = c("nicely", "kk", "fr", "circle", "grid"))
-                                       ),
-                                       box(width = NULL, title = "External", status = "success", collapsible = TRUE, collapsed = TRUE,
-                                           checkboxInput("graph_from_csv", "Load from CSV?", value = FALSE),
-                                           conditionalPanel("input.graph_from_csv == true",
-                                                            fileInput("graph_nodes", "Nodes CSV"),
-                                                            fileInput("graph_edges", "Edges CSV")
-                                           )
+                                column(4, 
+                                       box(width = NULL, title = "Static Map", status = "primary", solidHeader = TRUE,
+                                           plotOutput("ggplot_map", height = "400px")
                                        )
                                 ),
+                                column(5,
+                                       box(width = NULL, title = "Network Topology", status = "primary", solidHeader = TRUE,
+                                           plotOutput("graph_plot", height = "400px")
+                                       )
+                                ), 
                                 
-                                # Visualization Column
-                                column(width = 10,
-                                       fluidRow(
-                                         column(6,
-                                                box(width = NULL, title = "Static Map", status = "info", solidHeader = TRUE,
-                                                    plotOutput("ggplot_map", height = "300px")
-                                                )
-                                         ),
-                                         column(6,
-                                                box(width = NULL, title = "Network Topology", status = "info", solidHeader = TRUE,
-                                                    plotOutput("graph_plot", height = "300px")
-                                                )
-                                         )
-                                       ),
-                                       fluidRow(
-                                         box(width = 12, title = "Interactive Map (Leaflet)", status = "success", solidHeader = TRUE,
-                                             leafletOutput("map_plot", height = "500px")
-                                         )
+                                column(1,),
+                                
+                              ),
+                              fluidRow(
+                                column(12,
+                                       box(width = NULL, title = "Species List (Selected Groups)", status = "success", solidHeader = TRUE,
+                                           DT::DTOutput("view_species_table")
                                        )
                                 )
                               )
                             )
                     )
-                  ) # tabItems
-                ) # dashboardBody
+                  ) # fim tabItems
+                ) # fim dashboardBody
   ) # dashboardPage
 ) # shinyUI

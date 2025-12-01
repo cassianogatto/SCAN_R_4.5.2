@@ -15,7 +15,7 @@ library(RColorBrewer)# Para a paleta de cores
 library(DT)          # Para as tabelas modernas
 
 
-# --- 🚀 FIX: INCREASE UPLOAD LIMIT ---
+# --- 🚀 FIX: INCREASE UPLOAD LIMIT ----
 # Set limit to 500 MB (Default is only 5MB)
 options(shiny.maxRequestSize = 500 * 1024^2) 
 
@@ -25,7 +25,7 @@ sf::sf_use_s2(FALSE)
 
 shinyServer(function(input, output, session) {
   
-  # --- 1. LEITURA E PROCESSAMENTO DO MAPA ---
+  # --- 1. LEITURA E PROCESSAMENTO DO MAPA ----
   
   # Reactive para ler o shapefile
   map_input <- reactive({
@@ -117,7 +117,7 @@ shinyServer(function(input, output, session) {
   })
   
   
-  # --- 2. CÁLCULO DO CS (Spatial Congruence) ---
+  # --- 2. CÁLCULO DO CS (Spatial Congruence) ----
   
   # Reactive para calcular ou carregar a tabela Cs
   Cs_table_data <- reactive({
@@ -197,7 +197,7 @@ shinyServer(function(input, output, session) {
   )
   
   
-  # --- 3. SCAN ANALYSIS (Network & Chorotypes) ---
+  # --- 3. SCAN ANALYSIS (Network & Chorotypes) ----
   
   SCANlist <- eventReactive(input$run_scan, {
     req(Cs_table_data())
@@ -343,18 +343,17 @@ shinyServer(function(input, output, session) {
     filename = function() { paste0(input$scan_data_to_download, ".csv") },
     content = function(file) { write_csv(dataset_SCAN_ouput(), file) }
   )
+
   
+  # --- 4. SCAN EXPLORER (GLOBAL CONTROLS & VIEWS) ----
   
-  # --- 4. SCAN VIEWER (Visualização Interativa) ---
-  
-  # Atualizar checkbox de chorótipos baseado no Threshold escolhido
-  output$original_components <- renderUI({
+  # A. UI DO SELETOR DE CHORÓTIPOS (NO PAINEL FLUTUANTE)
+  output$chorotype_selector_global <- renderUI({
     req(SCANlist())
     df <- SCANlist()[['chorotypes']]
     
-    # Filtrar pelo Ct escolhido no input 'threshold' da aba Viewer
-    # Precisamos arredondar para evitar problemas de float (0.8 vs 0.8000001)
-    disp_ct <- input$threshold
+    # Filtra grupos disponíveis baseado no slider GLOBAL
+    disp_ct <- input$threshold_global
     available_groups <- df |> 
       filter(abs(Threshold - disp_ct) < 0.001) |> 
       pull(Chorotype_ID) |> 
@@ -362,152 +361,365 @@ shinyServer(function(input, output, session) {
     
     if(length(available_groups) == 0) return(helpText("No chorotypes at this threshold."))
     
-    # Extrair apenas o número do ID (ex: "Ct0.8_G1" -> "1") para ficar mais limpo
-    # Assumindo formato gerado acima
+    # Formata nomes para ficar bonito (Ct0.5_G1 -> Group 1)
     group_nums <- gsub(".*_G", "", available_groups)
     names(available_groups) <- paste("Group", group_nums)
     
-    checkboxGroupInput("selected_chorotypes", "Select Chorotypes to View:",
+    checkboxGroupInput("selected_chorotypes_global", NULL, # Label vazio pois já tem título no UI
                        choices = available_groups,
-                       selected = available_groups[1:min(3, length(available_groups))], # Selecionar os 3 primeiros por padrão
+                       selected = available_groups[1:min(3, length(available_groups))], 
                        inline = TRUE)
   })
   
-  # Subconjunto de dados para visualização (Mapa e Grafo)
+  # B. REACTIVE UNIFICADO (DADOS FILTRADOS)
+  # Este objeto alimenta o Mapa, o GGplot, o Grafo e a Tabela simultaneamente
   g_sub <- reactive({
-    req(SCANlist(), input$threshold, input$selected_chorotypes)
+    req(SCANlist(), input$threshold_global, input$selected_chorotypes_global)
     
-    # Pegar as espécies dos chorótipos selecionados
+    # 1. Identificar espécies dos grupos selecionados
     df <- SCANlist()[['chorotypes']]
     selected_spp <- df |> 
-      filter(Chorotype_ID %in% input$selected_chorotypes) |>
+      filter(Chorotype_ID %in% input$selected_chorotypes_global) |>
       pull(Species) |>
       unique()
     
     req(length(selected_spp) > 0)
     
-    # Pegar o grafo completo e filtrar
-    # Também precisamos filtrar as arestas pelo threshold visualizado!
+    # 2. Filtrar o grafo completo
     g_full <- SCANlist()[['graph']]
     
     g_view <- g_full |>
       activate(edges) |>
-      filter(Cs >= input$threshold) |> # Filtra conexões fracas
+      filter(Cs >= input$threshold_global) |> # Usa Threshold Global
       activate(nodes) |>
-      filter(name %in% selected_spp) |> # Filtra espécies selecionadas
-      # Adicionar info de qual grupo pertence (para colorir)
-      # Nota: uma espécie pode estar em múltiplos grupos em teoria, mas aqui vamos simplificar
-      mutate(comps = group_components()) # Recalcula componentes locais para colorir
+      filter(name %in% selected_spp) |>        # Usa Espécies selecionadas
+      mutate(comps = group_components())        # Recalcula componentes locais para cor
     
     return(g_view)
   })
   
-  # Subset do Mapa Geográfico
+  # C. REACTIVE UNIFICADO (MAPA GEOGRÁFICO)
   g_map <- reactive({
     req(g_sub(), map())
     
-    # Nomes das espécies no grafo filtrado
     spp_names <- g_sub() |> activate(nodes) |> pull(name)
-    
-    # Filtrar shapefile
     map_filtered <- map() |> filter(sp %in% spp_names)
     
-    # Adicionar info de componentes (para cor)
-    # Join com dados do grafo
+    # Join com dados do grafo para pegar o ID do grupo (comps)
     node_data <- g_sub() |> activate(nodes) |> as_tibble() |> select(name, comps)
     map_final <- map_filtered |> left_join(node_data, by = c("sp" = "name"))
     
     return(map_final)
   })
   
-  # --- PALETA DE CORES PADRONIZADA ---
-  # Cria uma paleta nomeada fixa para garantir que cores iguais sejam usadas no Leaflet, ggplot e ggraph
+  # D. PALETA DE CORES UNIFICADA
   chorotype_pal <- reactive({
     req(g_sub())
     
-    # Identificar todos os componentes únicos (grupos) no subgrafo atual
     comps_presentes <- g_sub() |> activate(nodes) |> as_tibble() |> pull(comps) |> unique() |> sort()
     
-    # Gerar cores
     n_cores <- length(comps_presentes)
-    if(n_cores < 3) n_cores <- 3 # RColorBrewer precisa de min 3
+    if(n_cores < 3) n_cores <- 3
     
-    # Paleta escolhida no UI
-    pal_name <- input$palette
+    pal_name <- input$palette_global
     cores <- suppressWarnings(RColorBrewer::brewer.pal(n = n_cores, name = pal_name))
     
-    # Se precisar de mais cores do que a paleta tem, interpolar
     if(length(comps_presentes) > length(cores)) {
       cores <- colorRampPalette(cores)(length(comps_presentes))
     } else {
       cores <- cores[1:length(comps_presentes)]
     }
     
-    # Nomear o vetor de cores com os IDs dos componentes
-    # Isso garante o mapeamento correto: names(vetor) = ID, value = Cor
     names(cores) <- comps_presentes
-    
     return(cores)
   })
   
+  # --- OUTPUTS VISUAIS ----
   
-  # --- VISUALIZADORES ---
-  
-  # 1. Mapa Interativo (Leaflet)
-  output$map_plot <- renderLeaflet({
+  # 1. MAPA LEAFLET (TELA CHEIA - ABA 1)
+  output$map_fullscreen <- renderLeaflet({
     req(g_map(), chorotype_pal())
     
-    # Criar função de cor baseada na paleta fixa !!! meses para fazer isso e gemini levou 30s
     pal_fun <- colorFactor(palette = chorotype_pal(), domain = g_map()$comps)
     
     leaflet(g_map()) |>
-      
-      addProviderTiles(providers$CartoDB.Positron,
-                       options = providerTileOptions(noWrap = TRUE) ) |> # Mapa base clean
-      # addProviderTiles(providers$Stadia.StamenToner) 
-      
+      addProviderTiles(providers$CartoDB.Positron, options = providerTileOptions(noWrap = TRUE)) |>
       addPolygons(
         fillColor = ~pal_fun(comps),
-        fillOpacity = input$map_alpha,
-        color = "black", weight = 1,
-        popup = ~paste("Species:", sp, "<br>Chorotype:", comps)
+        fillOpacity = input$alpha_global, # Usa Alpha Global
+        color = "white", weight = 1, opacity = 1,
+        popup = ~paste("<b>Species:</b>", sp, "<br><b>Group:</b>", comps)
       ) |>
       addLegend("bottomright", pal = pal_fun, values = ~comps, title = "Group")
   })
   
-  # 2. Mapa Estático (ggplot)
+  # 2. GGPLOT MAP (ESTÁTICO - ABA 2)
   output$ggplot_map <- renderPlot({
     req(g_map(), chorotype_pal())
     
     ggplot(g_map()) +
-      geom_sf(aes(fill = as.factor(comps)), color = "black", size = 0.2, alpha = input$map_alpha) +
-      # Usar scale_fill_manual com a paleta fixa
+      geom_sf(aes(fill = as.factor(comps)), color = "black", size = 0.2, alpha = input$alpha_global) +
       scale_fill_manual(values = chorotype_pal(), name = "Group") +
       theme_minimal() +
-      labs(title = paste("Chorotypes at Ct =", input$threshold))
+      labs(title = paste("Spatial Distribution (Ct =", input$threshold_global, ")"))
   })
   
-  # 3. Gráfico de Rede (Simples)
+  # 3. GRAPH PLOT (TOPOLOGIA - ABA 2)
   output$graph_plot <- renderPlot({
     req(g_sub(), chorotype_pal())
     
-    lay <- create_layout(g_sub(), layout = input$layout)
+    lay <- create_layout(g_sub(), layout = input$layout_graph)
     
     ggraph(lay) +
       geom_edge_link(aes(alpha = Cs), width = 1, show.legend = FALSE) +
-      # Nós coloridos pela paleta fixa
       geom_node_point(aes(fill = as.factor(comps)), size = 5, shape = 21, color = "black") +
-      scale_fill_manual(values = chorotype_pal()) + # <--- AQUI A MÁGICA
+      scale_fill_manual(values = chorotype_pal()) +
       geom_node_text(aes(label = name), repel = TRUE, size = 3) +
       theme_graph() +
       theme(legend.position = "none")
   })
   
-  # Tabela de composição dos grupos (na aba Viewer)
-  output$g_sub_table <- renderDT({
-    req(g_sub())
-    df <- g_sub() |> activate(nodes) |> as_tibble() |> select(Group = comps, Species = name, Degree = degree) |> arrange(Group)
-    datatable(df, options = list(pageLength = 5))
+  # 4. TABELA DE ESPÉCIES (ABA 2)
+  output$view_species_table <- renderDT({
+    req(SCANlist(), input$threshold_global, input$selected_chorotypes_global)
+    
+    # Pegamos o dataframe original dos resultados (muito mais seguro)
+    df_completo <- SCANlist()[['chorotypes']]
+    
+    # Filtramos usando os inputs do Painel Global
+    df_filtrado <- df_completo |> 
+      filter(abs(Threshold - input$threshold_global) < 0.001) |> # Filtra Ct
+      filter(Chorotype_ID %in% input$selected_chorotypes_global) |> # Filtra Grupos
+      select(Ct = Threshold, Chorotype = Chorotype_ID, Species, N_Species) |>
+      arrange(Chorotype, Species)
+    
+    datatable(df_filtrado, 
+              options = list(pageLength = 10, scrollX = TRUE), 
+              rownames = FALSE)
   })
+  
+  # output$view_species_table <- renderDT({
+  #   req(g_sub())
+  #   
+  #   # Extrai tabela simples: Grupo | Espécie | Grau de Conexão
+  #   df <- g_sub() |> 
+  #     activate(nodes) |> 
+  #     as_tibble() |> 
+  #     select(Group = comps, Species = name, Connections = degree) |> 
+  #     arrange(Group, desc(Connections))
+  #   
+  #   datatable(df, options = list(pageLength = 10, scrollX = TRUE), rownames = FALSE)
+  # })
+  
+  # 5. MINI GRAPH PLOT (FLOATING ON MAP - ABA 1) ----
+  
+  # 5. MINI GRAPH PLOT (FLOATING ON MAP - ABA 1)
+  output$mini_graph_plot <- renderPlot({
+    req(g_sub(), chorotype_pal())
+    
+    # Layout escolhido
+    lay <- create_layout(g_sub(), layout = input$layout_graph)
+    
+    ggraph(lay) +
+      geom_edge_link(aes(alpha = Cs), width = 0.5, show.legend = FALSE) + 
+      # Nós um pouco menores para caber no box pequeno
+      geom_node_point(aes(fill = as.factor(comps)), size = 3, shape = 21, color = "black") + 
+      scale_fill_manual(values = chorotype_pal()) +
+      # Texto com fundo branco semitransparente para ler em cima do mapa
+      geom_node_text(aes(label = name), repel = TRUE, size = 2.5, bg.color = "white", bg.r = 0.1) +
+      
+      # TEMA CRUCIAL PARA TRANSPARÊNCIA
+      theme_void() + # Remove eixos e grids
+      theme(
+        legend.position = "none",
+        # Fundo do plot transparente para ver o mapa atrás
+        panel.background = element_rect(fill = "transparent", color = NA), 
+        plot.background = element_rect(fill = "transparent", color = NA)
+      )
+  }, bg = "transparent") # Argumento extra do renderPlot para garantir transparência no PNG gerado
+  
+  # output$mini_graph_plot <- renderPlot({
+  #   req(g_sub(), chorotype_pal())
+  #   
+  #   # Use the layout selected in the global settings
+  #   lay <- create_layout(g_sub(), layout = input$layout_graph)
+  #   
+  #   ggraph(lay) +
+  #     geom_edge_link(aes(alpha = Cs), width = 0.5, show.legend = FALSE) + # Thinner lines for mini version
+  #     geom_node_point(aes(fill = as.factor(comps)), size = 4, shape = 21, color = "black") + # Slightly smaller nodes
+  #     scale_fill_manual(values = chorotype_pal()) +
+  #     geom_node_text(aes(label = name), repel = TRUE, size = 3, bg.color = "white", bg.r = 0.1) +
+  #     theme_graph(base_family = "sans", background = "white") + # Ensure white background
+  #     theme(
+  #       legend.position = "none",
+  #       plot.background = element_rect(fill = "transparent", color = NA), # Transparent outer border
+  #       plot.margin = margin(5, 5, 5, 5)
+  #     )
+  # })
+  ### OLD VIEWER
+  # --- 4. SCAN VIEWER (Visualização Interativa) --- old 
+  
+  # # Atualizar checkbox de chorótipos baseado no Threshold escolhido
+  # output$original_components <- renderUI({
+  #   req(SCANlist())
+  #   df <- SCANlist()[['chorotypes']]
+  #   
+  #   # Filtrar pelo Ct escolhido no input 'threshold' da aba Viewer
+  #   # Precisamos arredondar para evitar problemas de float (0.8 vs 0.8000001)
+  #   disp_ct <- input$threshold
+  #   available_groups <- df |> 
+  #     filter(abs(Threshold - disp_ct) < 0.001) |> 
+  #     pull(Chorotype_ID) |> 
+  #     unique()
+  #   
+  #   if(length(available_groups) == 0) return(helpText("No chorotypes at this threshold."))
+  #   
+  #   # Extrair apenas o número do ID (ex: "Ct0.8_G1" -> "1") para ficar mais limpo
+  #   # Assumindo formato gerado acima
+  #   group_nums <- gsub(".*_G", "", available_groups)
+  #   names(available_groups) <- paste("Group", group_nums)
+  #   
+  #   checkboxGroupInput("selected_chorotypes", "Select Chorotypes to View:",
+  #                      choices = available_groups,
+  #                      selected = available_groups[1:min(3, length(available_groups))], # Selecionar os 3 primeiros por padrão
+  #                      inline = TRUE)
+  # })
+  # 
+  # # Subconjunto de dados para visualização (Mapa e Grafo)
+  # g_sub <- reactive({
+  #   req(SCANlist(), input$threshold, input$selected_chorotypes)
+  #   
+  #   # Pegar as espécies dos chorótipos selecionados
+  #   df <- SCANlist()[['chorotypes']]
+  #   selected_spp <- df |> 
+  #     filter(Chorotype_ID %in% input$selected_chorotypes) |>
+  #     pull(Species) |>
+  #     unique()
+  #   
+  #   req(length(selected_spp) > 0)
+  #   
+  #   # Pegar o grafo completo e filtrar
+  #   # Também precisamos filtrar as arestas pelo threshold visualizado!
+  #   g_full <- SCANlist()[['graph']]
+  #   
+  #   g_view <- g_full |>
+  #     activate(edges) |>
+  #     filter(Cs >= input$threshold) |> # Filtra conexões fracas
+  #     activate(nodes) |>
+  #     filter(name %in% selected_spp) |> # Filtra espécies selecionadas
+  #     # Adicionar info de qual grupo pertence (para colorir)
+  #     # Nota: uma espécie pode estar em múltiplos grupos em teoria, mas aqui vamos simplificar
+  #     mutate(comps = group_components()) # Recalcula componentes locais para colorir
+  #   
+  #   return(g_view)
+  # })
+  # 
+  # # Subset do Mapa Geográfico
+  # g_map <- reactive({
+  #   req(g_sub(), map())
+  #   
+  #   # Nomes das espécies no grafo filtrado
+  #   spp_names <- g_sub() |> activate(nodes) |> pull(name)
+  #   
+  #   # Filtrar shapefile
+  #   map_filtered <- map() |> filter(sp %in% spp_names)
+  #   
+  #   # Adicionar info de componentes (para cor)
+  #   # Join com dados do grafo
+  #   node_data <- g_sub() |> activate(nodes) |> as_tibble() |> select(name, comps)
+  #   map_final <- map_filtered |> left_join(node_data, by = c("sp" = "name"))
+  #   
+  #   return(map_final)
+  # })
+  # 
+  # # --- PALETA DE CORES PADRONIZADA ---
+  # # Cria uma paleta nomeada fixa para garantir que cores iguais sejam usadas no Leaflet, ggplot e ggraph
+  # chorotype_pal <- reactive({
+  #   req(g_sub())
+  #   
+  #   # Identificar todos os componentes únicos (grupos) no subgrafo atual
+  #   comps_presentes <- g_sub() |> activate(nodes) |> as_tibble() |> pull(comps) |> unique() |> sort()
+  #   
+  #   # Gerar cores
+  #   n_cores <- length(comps_presentes)
+  #   if(n_cores < 3) n_cores <- 3 # RColorBrewer precisa de min 3
+  #   
+  #   # Paleta escolhida no UI
+  #   pal_name <- input$palette
+  #   cores <- suppressWarnings(RColorBrewer::brewer.pal(n = n_cores, name = pal_name))
+  #   
+  #   # Se precisar de mais cores do que a paleta tem, interpolar
+  #   if(length(comps_presentes) > length(cores)) {
+  #     cores <- colorRampPalette(cores)(length(comps_presentes))
+  #   } else {
+  #     cores <- cores[1:length(comps_presentes)]
+  #   }
+  #   
+  #   # Nomear o vetor de cores com os IDs dos componentes
+  #   # Isso garante o mapeamento correto: names(vetor) = ID, value = Cor
+  #   names(cores) <- comps_presentes
+  #   
+  #   return(cores)
+  # })
+  # 
+  # 
+  # # --- VISUALIZADORES ---
+  # 
+  # # 1. Mapa Interativo (Leaflet)
+  # output$map_plot <- renderLeaflet({
+  #   req(g_map(), chorotype_pal())
+  #   
+  #   # Criar função de cor baseada na paleta fixa !!! meses para fazer isso e gemini levou 30s
+  #   pal_fun <- colorFactor(palette = chorotype_pal(), domain = g_map()$comps)
+  #   
+  #   leaflet(g_map()) |>
+  #     
+  #     addProviderTiles(providers$CartoDB.Positron,
+  #                      options = providerTileOptions(noWrap = TRUE) ) |> # Mapa base clean
+  #     # addProviderTiles(providers$Stadia.StamenToner) 
+  #     
+  #     addPolygons(
+  #       fillColor = ~pal_fun(comps),
+  #       fillOpacity = input$map_alpha,
+  #       color = "black", weight = 1,
+  #       popup = ~paste("Species:", sp, "<br>Chorotype:", comps)
+  #     ) |>
+  #     addLegend("bottomright", pal = pal_fun, values = ~comps, title = "Group")
+  # })
+  # 
+  # # 2. Mapa Estático (ggplot)
+  # output$ggplot_map <- renderPlot({
+  #   req(g_map(), chorotype_pal())
+  #   
+  #   ggplot(g_map()) +
+  #     geom_sf(aes(fill = as.factor(comps)), color = "black", size = 0.2, alpha = input$map_alpha) +
+  #     # Usar scale_fill_manual com a paleta fixa
+  #     scale_fill_manual(values = chorotype_pal(), name = "Group") +
+  #     theme_minimal() +
+  #     labs(title = paste("Chorotypes at Ct =", input$threshold))
+  # })
+  # 
+  # # 3. Gráfico de Rede (Simples)
+  # output$graph_plot <- renderPlot({
+  #   req(g_sub(), chorotype_pal())
+  #   
+  #   lay <- create_layout(g_sub(), layout = input$layout)
+  #   
+  #   ggraph(lay) +
+  #     geom_edge_link(aes(alpha = Cs), width = 1, show.legend = FALSE) +
+  #     # Nós coloridos pela paleta fixa
+  #     geom_node_point(aes(fill = as.factor(comps)), size = 5, shape = 21, color = "black") +
+  #     scale_fill_manual(values = chorotype_pal()) + # <--- AQUI A MÁGICA
+  #     geom_node_text(aes(label = name), repel = TRUE, size = 3) +
+  #     theme_graph() +
+  #     theme(legend.position = "none")
+  # })
+  # 
+  # # Tabela de composição dos grupos (na aba Viewer)
+  # output$g_sub_table <- renderDT({
+  #   req(g_sub())
+  #   df <- g_sub() |> activate(nodes) |> as_tibble() |> select(Group = comps, Species = name, Degree = degree) |> arrange(Group)
+  #   datatable(df, options = list(pageLength = 5))
+  # })
   
 })
