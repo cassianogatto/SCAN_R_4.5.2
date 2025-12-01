@@ -435,7 +435,7 @@ shinyUI(
                                       draggable = TRUE,
                                       
                                       # Título menor
-                                      tags$h6(icon("stars"), "Network Topology", style = "margin: 0px 0px 5px 5px; font-weight: bold; opacity: 0.7;"),
+                                      tags$h3(icon("stars"), "Network Topology", style = "margin: 0px 0px 5px 5px; font-weight: bold; opacity: 0.7;"),
                                       
                                       # Plot menor (200px de altura)
                                       plotOutput("mini_graph_plot", height = "330px")
