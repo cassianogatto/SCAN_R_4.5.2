@@ -63,7 +63,8 @@ install.packages(c(
   "units",
   "htmltools",
   "lwgeom", 
-  "RColorBrewer"
+  "RColorBrewer",
+  "DT"
 ))
 ```
 ### Step 3: Run SCAN
