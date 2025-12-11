@@ -1,7 +1,7 @@
 name: Sync to Hugging Face Hub
 on:
   push:
-    branches: [master]  # Monitoring your GitHub 'master' branch
+    branches: [master]
 
 jobs:
   sync-to-hub:
@@ -11,10 +11,21 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true
+      
+      # --- NEW DEBUG STEP ---
+      - name: Debug Secret Availability
+        env:
+          TEST_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$TEST_TOKEN" ]; then
+            echo "🔴 ERROR: HF_TOKEN is EMPTY. GitHub cannot read your secret."
+            echo "Please check that it is in 'Repository Secrets' and spelled correctly."
+            exit 1
+          else
+            echo "🟢 SUCCESS: HF_TOKEN was found! (Length: ${#TEST_TOKEN} characters)"
+          fi
+
       - name: Push to hub
         env:
-          # This reads the token from your GitHub Secrets (SAFE)
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        # I updated the username to 'cassianogatto' below.
-        # Ensure 'SCAN_R_4.5.2' is the EXACT name of your Space on Hugging Face.
         run: git push --force https://cassianogatto:$HF_TOKEN@huggingface.co/spaces/cassianogatto/SCAN_R_4.5.2 master:main
