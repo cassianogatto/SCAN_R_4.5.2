@@ -15,4 +15,4 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         # Replace USERNAME and SPACE_NAME below with your specific details!
-        run: git push https://USERNAME:$HF_TOKEN@huggingface.co/spaces/caspikus/SCAN_R_4.5.2 main
+        run: git push https://USERNAME:$HF_TOKEN@huggingface.co/spaces/caspikus/SCAN_R_4.5.2 master
