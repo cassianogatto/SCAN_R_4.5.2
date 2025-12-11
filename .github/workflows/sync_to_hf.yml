@@ -20,11 +20,13 @@ jobs:
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
           
-          # 2. THE TRICK: Destroy the old history and start fresh
+          # 2. THE TRICK: Delete the old history so HF doesn't see the "dirty" past
           rm -rf .git
+          
+          # 3. Start a fresh repository targeting the 'main' branch directly
           git init -b main
           
-          # 3. Setup LFS for the large files (Safe Envelope)
+          # 4. Setup LFS (Large File Storage) immediately
           git lfs install
           git lfs track "*.png"
           git lfs track "*.shp"
@@ -33,9 +35,10 @@ jobs:
           git lfs track "*.prj"
           git add .gitattributes
           
-          # 4. Add all files and commit
+          # 5. Add all files and commit
           git add .
-          git commit -m "Automated Deployment from GitHub"
+          git commit -m "Fresh upload from GitHub"
           
-          # 5. Force Push (Overwriting HF with this clean version)
+          # 6. Force Push to Hugging Face
+          # Note: We use main:main because we created a fresh 'main' branch in step 3
           git push --force https://cassianogatto:$HF_TOKEN@huggingface.co/spaces/cassianogatto/SCAN_R_4.5.2 main:main
