@@ -74,6 +74,8 @@ library(shiny)
 # Run SCAN directly from the repository
 runGitHub("SCAN_R_4.5.2", "cassianogatto")
 ```
+When you run SCAN remotely for the first time is recommended to downloado the [example](https://github.com/cassianogatto/SCAN_R_4.5.2/examples) folder in this repository. A sample of Neotropical Primate distributions is available to test 1) map loading, as the shp files are properly configurated and can be used as a template, 2) Spatial Congruence Cs calculus, as the data is small enough for a rapid test of the App, 3) SCAN algorithm, and 4) Graph and Map interfaces of the SCAN App.
+
 ### Step 4: Alternatively, you can download or clone the [SCAN_R_4.5.2](https://github.com/cassianogatto/SCAN_R_4.5.2) directory in your computer.
 After downloading the folder open ui.R and server.R in RStudio, call for the Shiny package, and run the App:
 ```r
