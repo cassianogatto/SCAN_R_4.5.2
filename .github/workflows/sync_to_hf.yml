@@ -16,23 +16,26 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # Configure git user (required for LFS tracking changes)
+          # 1. Configure Git Identity
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
           
-          # 1. Install LFS (Large File Storage)
-          git lfs install
+          # 2. THE TRICK: Destroy the old history and start fresh
+          rm -rf .git
+          git init -b main
           
-          # 2. Track the specific binary files blocking you
+          # 3. Setup LFS for the large files (Safe Envelope)
+          git lfs install
           git lfs track "*.png"
           git lfs track "*.shp"
           git lfs track "*.shx"
           git lfs track "*.dbf"
           git lfs track "*.prj"
-          
-          # 3. Save these rules to a .gitattributes file
           git add .gitattributes
-          git commit -m "Setup LFS for images and maps" || true
           
-          # 4. Push everything (Forcefully)
-          git push --force https://cassianogatto:$HF_TOKEN@huggingface.co/spaces/cassianogatto/SCAN_R_4.5.2 master:main
+          # 4. Add all files and commit
+          git add .
+          git commit -m "Automated Deployment from GitHub"
+          
+          # 5. Force Push (Overwriting HF with this clean version)
+          git push --force https://cassianogatto:$HF_TOKEN@huggingface.co/spaces/cassianogatto/SCAN_R_4.5.2 main:main
