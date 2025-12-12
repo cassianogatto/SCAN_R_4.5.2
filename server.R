@@ -23,6 +23,40 @@ options(shiny.maxRequestSize = 500 * 1024^2)
 sf::sf_use_s2(FALSE)
 
 
+# --- FUNÇÃO DE CÁLCULO GLOBAL (Igual ao seu script local) ---
+calculate_chunk_cs_engine <- function(species_chunk, all_shapes, areas_df) {
+    
+    # 1. Filtra o Chunk
+    shapes_chunk <- all_shapes |> dplyr::filter(sp %in% species_chunk)
+    
+    # 2. Intersecção
+    intersections <- sf::st_intersection(shapes_chunk, all_shapes)
+    
+    # 3. Limpeza e Cálculo
+    cs_chunk <- intersections |>
+        dplyr::filter(sp != sp.1) |>
+        dplyr::mutate(area_overlap = sf::st_area(geometry)) |>
+        sf::st_drop_geometry() |>
+        dplyr::select(sp1 = sp, sp2 = sp.1, area_overlap) |>
+        
+        # Juntar áreas
+        dplyr::left_join(areas_df, by = c("sp1" = "sp")) |>
+        dplyr::rename(area_sp1 = area_sp) |>
+        dplyr::left_join(areas_df, by = c("sp2" = "sp")) |>
+        dplyr::rename(area_sp2 = area_sp) |>
+        
+        # Fórmula
+        dplyr::mutate(Cs = (as.numeric(area_overlap) / as.numeric(area_sp1)) * (as.numeric(area_overlap) / as.numeric(area_sp2))) |>
+        dplyr::select(sp1, sp2, Cs) |>
+        dplyr::as_tibble()
+    
+    return(cs_chunk)
+}
+
+
+
+
+
 shinyServer(function(input, output, session) {
   
   # --- 1. LEITURA E PROCESSAMENTO DO MAPA ----
@@ -117,85 +151,142 @@ shinyServer(function(input, output, session) {
   })
   
   
-  # --- 2. CÁLCULO DO CS (Spatial Congruence) ----
+  # --- 2. CÁLCULO DO CS (Spatial Congruence) - VERSÃO OBSERVE_EVENT ----
   
-  # Reactive para calcular ou carregar a tabela Cs
-  Cs_table_data <- reactive({
-    # Se o usuário fez upload de um CSV
-    if(input$Cs_upload_csv && !is.null(input$Cs_table)) {
-      return(read_csv(input$Cs_table$datapath))
-    }
-    
-    # Se o usuário clicou para calcular (requer mapa)
-    req(input$calculate_Cs)
-    req(map())
-    
-    # Isolar execução para não recalcular à toa
-    isolate({
+  # Armazenamento de valores reativos (funciona como uma memória interna)
+  store_cs <- reactiveValues(data = NULL)
+  
+  # A. Lógica para Upload de CSV (Atualiza a memória se subir arquivo)
+  observe({
+      req(input$Cs_upload_csv, input$Cs_table)
+      store_cs$data <- read_csv(input$Cs_table$datapath)
+  })
+  
+  # B. Lógica para o Botão CALCULAR (Gatilho Explícito)
+  observeEvent(input$calculate_Cs, {
+      
+      # Verificação de segurança
+      req(map())
+      print("--- BOTÃO PRESSIONADO: INICIANDO PROCESSO ---") 
+      
+      # 1. Preparação dos Dados
       shapes <- map()
       
-      # Buffer interno (opcional)
-      if(input$use_buffer_map) {
-        # Atenção: st_buffer em graus pode ser problemático, idealmente usar projeção métrica
-        shapes <- st_buffer(shapes, dist = -input$shrink_factor_buff)
+      if(!"sp" %in% names(shapes)) {
+          showNotification("Error: Map missing 'sp' column!", type = "error")
+          return()
       }
       
-      # Cálculo das áreas das espécies
-      areas <- shapes |> 
-        mutate(area_sp = st_area(geometry)) |>
-        st_drop_geometry() |>
-        select(sp, area_sp)
+      # Buffer (se ativado)
+      if(isTRUE(input$use_buffer_map)) {
+          showNotification("Applying Buffer...", type = "message")
+          shapes <- st_buffer(shapes, dist = -input$shrink_factor_buff)
+      }
       
-      # Intersecção (Overlap)
-      # Isso pode demorar para muitos polígonos!
-      intersections <- st_intersection(shapes, shapes)
+      # Cálculo de Áreas (Rápido)
+      areas_df <- shapes |> 
+          mutate(area_sp = st_area(geometry)) |>
+          st_drop_geometry() |>
+          select(sp, area_sp) |>
+          as_tibble()
       
-      # Calcular área de overlap
-      # Filtrar onde sp.1 != sp.2 para evitar auto-comparação (embora Cs=1)
-      # E evitar duplicatas (A-B e B-A são iguais para Cs simétrico)
-      cs_data <- intersections |>
-        filter(sp != sp.1) |> # sp vem do x, sp.1 vem do y
-        mutate(area_overlap = st_area(geometry)) |>
-        st_drop_geometry() |>
-        select(sp1 = sp, sp2 = sp.1, area_overlap)
+      final_cs_table <- data.frame()
       
-      # Juntar com áreas totais
-      cs_final <- cs_data |>
-        left_join(areas, by = c("sp1" = "sp")) |>
-        rename(area_sp1 = area_sp) |>
-        left_join(areas, by = c("sp2" = "sp")) |>
-        rename(area_sp2 = area_sp)
-      
-      # Calcular Índice Cs
-      # Fórmula padrão (Hargrove): (Overlap/Area1) * (Overlap/Area2)
-      if(input$use_alternative_index && nchar(input$cs_similarity_index) > 0) {
-        # Avaliar fórmula customizada (perigoso, mas flexível)
-        # Requer que a string seja uma expressão válida usando as colunas
-        expr <- parse(text = input$cs_similarity_index)
-        cs_final <- cs_final |> mutate(Cs = eval(expr))
+      # 2. Execução (Chunks vs Direto)
+      if(isTRUE(input$use_chunks)) {
+          print(">>> MODO CHUNK SELECIONADO <<<")
+          
+          # Configuração dos Lotes
+          all_species <- unique(shapes$sp)
+          chunk_size_val <- input$chunk_size
+          chunks <- split(all_species, ceiling(seq_along(all_species) / chunk_size_val))
+          total_chunks <- length(chunks)
+          
+          list_of_cs_tables <- list()
+          
+          # Barra de Progresso
+          withProgress(message = 'Processing Chunks...', value = 0, {
+              
+              for (i in 1:total_chunks) {
+                  # Mensagem no Console para você acompanhar
+                  msg <- paste("Processing Batch", i, "of", total_chunks)
+                  print(msg)
+                  incProgress(1/total_chunks, detail = msg)
+                  
+                  # --- A MÁGICA: Chama a função externa ---
+                  list_of_cs_tables[[i]] <- calculate_chunk_cs_engine(
+                      species_chunk = chunks[[i]], 
+                      all_shapes = shapes, 
+                      areas_df = areas_df
+                  )
+                  
+                  # Limpeza de memória forçada
+                  gc() 
+              }
+          })
+          
+          print("Consolidando resultados...")
+          final_cs_table <- bind_rows(list_of_cs_tables) |>
+              distinct(pmax(sp1, sp2), pmin(sp1, sp2), .keep_all = TRUE) |>
+              select(sp1, sp2, Cs)
+          
       } else {
-        cs_final <- cs_final |> 
-          mutate(Cs = (as.numeric(area_overlap) / as.numeric(area_sp1)) * (as.numeric(area_overlap) / as.numeric(area_sp2)))
+          # MODO DIRETO
+          print(">>> MODO DIRETO SELECIONADO <<<")
+          withProgress(message = 'Calculating Full Intersection...', value = 0.5, {
+              
+              # Chama a mesma função engine, mas passando TODAS as espécies como chunk
+              all_spp <- unique(shapes$sp)
+              final_cs_table <- calculate_chunk_cs_engine(all_spp, shapes, areas_df)
+              
+          })
       }
       
-      return(cs_final |> select(sp1, sp2, Cs))
-    })
+      # 3. Filtro Final e Armazenamento
+      if(!is.null(input$filter_Cs)) {
+          final_cs_table <- final_cs_table |> filter(Cs >= input$filter_Cs)
+      }
+      
+      print(paste("Cálculo Finalizado! Linhas geradas:", nrow(final_cs_table)))
+      
+      # ATUALIZA O VALOR REATIVO (Isso dispara as tabelas/preview)
+      store_cs$data <- final_cs_table
+      
+      showNotification("Calculation Complete!", type = "message")
   })
   
-  # Outputs da aba Cs
+  # C. Reactive Bridge (Para manter compatibilidade com o resto do app)
+  # O resto do seu app espera chamar Cs_table_data(), então criamos essa ponte.
+  Cs_table_data <- reactive({
+      store_cs$data
+  })
+  
+  # --- OUTPUTS VISUAIS DA ABA CS (Restaurando o Preview) ---
+  
+  # Texto de diagnóstico (Linhas e Colunas)
   output$check_Cs_tables <- renderText({
-    req(Cs_table_data())
-    paste("Rows:", nrow(Cs_table_data()), " | Columns:", paste(names(Cs_table_data()), collapse=", "))
+      req(Cs_table_data())
+      df <- Cs_table_data()
+      paste("Rows:", nrow(df), " | Columns:", paste(names(df), collapse=", "))
   })
   
-  output$Cs_head <- renderTable({ req(Cs_table_data()); head(Cs_table_data()) })
-  output$Cs_tail <- renderTable({ req(Cs_table_data()); tail(Cs_table_data()) })
+  # Tabela Head (Início dos dados)
+  output$Cs_head <- renderTable({
+      req(Cs_table_data())
+      head(Cs_table_data())
+  })
   
+  # Tabela Tail (Final dos dados)
+  output$Cs_tail <- renderTable({
+      req(Cs_table_data())
+      tail(Cs_table_data())
+  })
+  
+  # Botão de Download (Crucial para salvar o resultado do Chunk)
   output$download_Cs <- downloadHandler(
-    filename = function() { "Cs_matrix.csv" },
-    content = function(file) { write_csv(Cs_table_data(), file) }
+      filename = function() { "Cs_matrix.csv" },
+      content = function(file) { write_csv(Cs_table_data(), file) }
   )
-  
   
   # --- 3. SCAN ANALYSIS (Network & Chorotypes) ----
   

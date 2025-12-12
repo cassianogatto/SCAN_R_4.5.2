@@ -311,80 +311,93 @@ shinyUI(
                     # 4. SPATIAL CONGRUENCE TAB (WARNING - ORANGE) ----
                     tabItem("Cs_tab",
                             fluidPage(
-                              tags$h2("Spatial Congruence Index (Cs)"),
-                              
-                              fluidRow(
-                                # Calculation Box
-                                column(width = 6,
-                                       box(width = NULL, title = "1. Calculate Index", status = "warning", solidHeader = TRUE,
-                                           tags$p("Calculate the Hargrove Index (default) or a custom formula."),
-                                           
-                                           checkboxInput("use_alternative_index", "Use custom formula?", value = FALSE),
-                                           conditionalPanel("input.use_alternative_index == true",
-                                                            textInput("cs_similarity_index", "Formula:", value = '(area_overlap / area_sp1) * (area_overlap / area_sp2)')
+                                tags$h2("Spatial Congruence Index (Cs)"),
+                                
+                                fluidRow(
+                                    # Calculation Box
+                                    column(width = 6,
+                                           box(width = NULL, title = "1. Calculate Index", status = "warning", solidHeader = TRUE,
+                                               tags$p("Calculate the Hargrove Index (default) or a custom formula."),
+                                               
+                                               checkboxInput("use_alternative_index", "Use custom formula?", value = FALSE),
+                                               conditionalPanel("input.use_alternative_index == true",
+                                                                textInput("cs_similarity_index", "Formula:", value = '(area_overlap / area_sp1) * (area_overlap / area_sp2)')
+                                               ),
+                                               
+                                               tags$hr(),
+                                               
+                                               # --- NEW CHUNK PROCESSING OPTION ---
+                                               tags$strong("Processing Settings (Memory Safety):"),
+                                               checkboxInput("use_chunks", "Process in Chunks? (Prevents RAM crash)", value = FALSE),
+                                               
+                                               conditionalPanel(
+                                                   condition = "input.use_chunks == true",
+                                                   numericInput("chunk_size", "Chunk Size (spp per batch):", value = 20, min = 5, step = 5),
+                                                   helpText("Lower values (e.g., 10-20) use less RAM but take longer.")
+                                               ),
+                                               tags$hr(),
+                                               # -----------------------------------
+                                               
+                                               fluidRow(
+                                                   column(6, numericInput("filter_Cs", "Minimum Cs value:", value = 0.1, step = 0.05)),
+                                                   column(6, actionButton("calculate_Cs", "Apply Cs Index", class = "btn-warning align-btn", width = "100%", icon = icon("play")))
+                                               )
                                            ),
                                            
-                                           fluidRow(
-                                             column(6, numericInput("filter_Cs", "Minimum Cs value:", value = 0.1, step = 0.05)),
-                                             column(6, actionButton("calculate_Cs", "Apply Cs Index", class = "btn-warning align-btn", width = "100%", icon = icon("play")))
+                                           # Buffer Box
+                                           box(width = NULL, title = "2. Optimization (Buffers)", status = "warning", collapsible = TRUE, collapsed = TRUE,
+                                               helpText("Use inner buffers to avoid marginal overlaps in large datasets (metric CRS only)."),
+                                               checkboxInput("use_buffer_map", "Enable Internal Buffer?", value = FALSE),
+                                               
+                                               conditionalPanel("input.use_buffer_map == true",
+                                                                numericInput("shrink_factor_buff", "Buffer Size (metric):", value = 0.01),
+                                                                checkboxGroupInput("quantiles_to_buffer", "Quartiles to buffer:", choices = c(1,2,3,4), selected = c(), inline = TRUE),
+                                                                tags$p(style = "color: red; font-weight: bold;", icon("exclamation-triangle"), " Warning: This alters polygon areas!")
+                                               )
                                            )
-                                       ),
-                                       
-                                       # Buffer Box
-                                       box(width = NULL, title = "2. Optimization (Buffers)", status = "warning", collapsible = TRUE, collapsed = TRUE,
-                                           helpText("Use inner buffers to avoid marginal overlaps in large datasets (metric CRS only)."),
-                                           checkboxInput("use_buffer_map", "Enable Internal Buffer?", value = FALSE),
+                                    ),
+                                    
+                                    # Data Management Box
+                                    column(width = 6,
+                                           box(width = NULL, title = "3. Data Management", status = "warning", solidHeader = TRUE,
+                                               
+                                               # PREVIEW IS NOW DEFAULT
+                                               tabsetPanel(
+                                                   tabPanel("Preview",
+                                                            tags$br(),
+                                                            textOutput("check_Cs_tables"),
+                                                            tags$h5("Head:"),
+                                                            tableOutput("Cs_head"),
+                                                            tags$h5("Tail:"),
+                                                            tableOutput("Cs_tail")
+                                                   ),
+                                                   
+                                                   tabPanel("Upload/Download",
+                                                            tags$br(),
+                                                            tags$strong("Upload existing Cs table:"),
+                                                            checkboxInput("Cs_upload_csv", "Upload .csv instead of calculating"),
+                                                            conditionalPanel("input.Cs_upload_csv == true",
+                                                                             fileInput("Cs_table", "Select CSV", accept = c(".csv"))
+                                                            ),
+                                                            tags$hr(),
+                                                            tags$strong("Download calculated table:"),
+                                                            tags$br(),
+                                                            downloadButton("download_Cs", "Download Cs.csv", class = "btn-default")
+                                                   )
+                                               )
+                                           ),
                                            
-                                           conditionalPanel("input.use_buffer_map == true",
-                                                            numericInput("shrink_factor_buff", "Buffer Size (metric):", value = 0.01),
-                                                            checkboxGroupInput("quantiles_to_buffer", "Quartiles to buffer:", choices = c(1,2,3,4), selected = c(), inline = TRUE),
-                                                            tags$p(style = "color: red; font-weight: bold;", icon("exclamation-triangle"), " Warning: This alters polygon areas!")
+                                           box(width = NULL, title = "Graph Check", status = "warning",
+                                               tags$h5("Nodes and Edges Preview:"),
+                                               fluidRow(
+                                                   column(6, tableOutput("graph_nodes")),
+                                                   column(6, tableOutput("graph_edges"))
+                                               )
                                            )
-                                       )
-                                ),
-                                
-                                # Data Management Box
-                                column(width = 6,
-                                       box(width = NULL, title = "3. Data Management", status = "warning", solidHeader = TRUE,
-                                           
-                                           # PREVIEW IS NOW DEFAULT
-                                           tabsetPanel(
-                                             tabPanel("Preview",
-                                                      tags$br(),
-                                                      textOutput("check_Cs_tables"),
-                                                      tags$h5("Head:"),
-                                                      tableOutput("Cs_head"),
-                                                      tags$h5("Tail:"),
-                                                      tableOutput("Cs_tail")
-                                             ),
-                                             
-                                             tabPanel("Upload/Download",
-                                                      tags$br(),
-                                                      tags$strong("Upload existing Cs table:"),
-                                                      checkboxInput("Cs_upload_csv", "Upload .csv instead of calculating"),
-                                                      conditionalPanel("input.Cs_upload_csv == true",
-                                                                       fileInput("Cs_table", "Select CSV", accept = c(".csv"))
-                                                      ),
-                                                      tags$hr(),
-                                                      tags$strong("Download calculated table:"),
-                                                      tags$br(),
-                                                      downloadButton("download_Cs", "Download Cs.csv", class = "btn-default")
-                                             )
-                                           )
-                                       ),
-                                       
-                                       box(width = NULL, title = "Graph Check", status = "warning",
-                                           tags$h5("Nodes and Edges Preview:"),
-                                           fluidRow(
-                                             column(6, tableOutput("graph_nodes")),
-                                             column(6, tableOutput("graph_edges"))
-                                           )
-                                       )
+                                    )
                                 )
-                              )
                             )
                     ),
-                    
                     # 5. SCAN ANALYSIS TAB (DANGER - RED) ----
                     tabItem("scan",
                             fluidPage(
