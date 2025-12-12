@@ -156,11 +156,11 @@ shinyServer(function(input, output, session) {
   # Armazenamento de valores reativos (funciona como uma memória interna)
   store_cs <- reactiveValues(data = NULL)
   
-  # A. Lógica para Upload de CSV (Atualiza a memória se subir arquivo)
-  observe({
-      req(input$Cs_upload_csv, input$Cs_table)
-      store_cs$data <- read_csv(input$Cs_table$datapath)
-  })
+  # # A. Lógica para Upload de CSV (Atualiza a memória se subir arquivo)
+  # observe({
+  #     req(input$Cs_upload_csv, input$Cs_table)
+  #     store_cs$data <- read_csv(input$Cs_table$datapath)
+  # })
   
   # B. Lógica para o Botão CALCULAR (Gatilho Explícito)
   observeEvent(input$calculate_Cs, {
@@ -256,9 +256,19 @@ shinyServer(function(input, output, session) {
   })
   
   # C. Reactive Bridge (Para manter compatibilidade com o resto do app)
-  # O resto do seu app espera chamar Cs_table_data(), então criamos essa ponte.
   Cs_table_data <- reactive({
-      store_cs$data
+      
+      # Se o usuário escolheu fazer upload *e* há um arquivo, este reactive o lerá.
+      # Isso garante que a atualização do input$Cs_table force a reatividade do Cs_table_data().
+      if(isTRUE(input$Cs_upload_csv) && !is.null(input$Cs_table)) {
+          print("--- LENDO CSV DE UPLOAD PARA O Cs_table_data ---")
+          
+          # Retorna o data.frame do CSV. Isso sobrescreve temporariamente o store_cs$data.
+          return(read_csv(input$Cs_table$datapath))
+      }
+      
+      # Se não houver upload, retorna o dado calculado (se existir)
+      return(store_cs$data)
   })
   
   # --- OUTPUTS VISUAIS DA ABA CS (Restaurando o Preview) ---
@@ -287,6 +297,41 @@ shinyServer(function(input, output, session) {
       filename = function() { "Cs_matrix.csv" },
       content = function(file) { write_csv(Cs_table_data(), file) }
   )
+  
+  
+# --- 3. OUTPUTS DE VISUALIZAÇÃO DO GRAFO NA ABA CS (Graph Check) ----
+  
+  # Prepara a tabela de nós (Espécies únicas)
+  output$graph_nodes <- renderTable({
+      req(Cs_table_data())
+      df_cs <- Cs_table_data()
+      
+      # Coleta todas as espécies únicas (Nós) da matriz Cs
+      nodes <- unique(c(df_cs$sp1, df_cs$sp2))
+      
+      # Cria uma tabela simples para exibição
+      data.frame(
+          Metric = c("Total Nodes (Spp)"),
+          Count = length(nodes)
+      )
+  })
+  
+  # Prepara a tabela de arestas (Conexões Cs)
+  output$graph_edges <- renderTable({
+      req(Cs_table_data())
+      df_cs <- Cs_table_data()
+      
+      # Cria uma tabela simples para exibição
+      data.frame(
+          Metric = c("Total Edges (Cs links)", "Min Cs", "Max Cs"),
+          Count = c(
+              nrow(df_cs),
+              round(min(df_cs$Cs, na.rm = TRUE), 4),
+              round(max(df_cs$Cs, na.rm = TRUE), 4)
+          )
+      )
+  })
+  
   
   # --- 3. SCAN ANALYSIS (Network & Chorotypes) ----
   
