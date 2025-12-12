@@ -1,19 +1,40 @@
 # Base R Shiny image
 FROM rocker/shiny:4.2.1
 
-# Install R system dependencies (add any others you need here)
+# 1. Install System Dependencies (keep this if you haven't already)
+RUN apt-get update && apt-get install -y \
+    libgdal-dev \
+    libgeos-dev \
+    libproj-dev \
+    libudunits2-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 2. Install R Packages
 RUN install2.r --error \
     shiny \
+    shinydashboard \
     dplyr \
+    igraph \
+    tidygraph \
+    tidyr \
+    ggraph \
+    readr \
+    sf \
     ggplot2 \
-    # Add other libraries your app uses here
-    
-# Copy the app to the image
+    leaflet \
+    units \
+    lwgeom \
+    RColorBrewer \
+    DT
+
+# 3. Copy the app
 COPY . /srv/shiny-server/
 
-# Hugging Face runs on port 7860, so we need to set that
-ENV SHINY_SERVER_PORT=7860
-EXPOSE 7860
+# --- THE FIX IS HERE ---
+# Force Shiny Server to listen on port 7860 instead of default 3838
+RUN sed -i 's/3838/7860/' /etc/shiny-server/shiny-server.conf
+# -----------------------
 
-# Run the app
+# 4. Expose and Run
+EXPOSE 7860
 CMD ["/usr/bin/shiny-server"]

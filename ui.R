@@ -1,6 +1,23 @@
 # Packages ----
-if (!require("pacman")) install.packages("pacman")
-pacman::p_load(shiny, dplyr, sf, igraph, tidygraph, DT, leaflet, ggplot2, ggraph, tidyr, lwgeom, shinydashboard)
+#if (!require("pacman")) install.packages("pacman")
+#pacman::p_load(shiny, dplyr, sf, igraph, tidygraph, DT, leaflet, ggplot2, ggraph, tidyr, lwgeom, shinydashboard)
+
+#removed pacman and pkg installations
+library(shiny)
+library(shinydashboard)
+library(dplyr)
+library(igraph)
+library(tidygraph)
+library(tidyr)
+library(ggraph)
+library(readr)
+library(sf)
+library(ggplot2)
+library(leaflet)
+library(units)
+library(lwgeom)      # Para corrigir geometrias (st_make_valid)
+library(RColorBrewer)# Para a paleta de cores
+library(DT)    
 
 # UI ----
 shinyUI(

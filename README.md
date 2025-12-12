@@ -1,10 +1,15 @@
-
-
+---
+title: SCAN Analysis App
+emoji: 🦜
+colorFrom: green
+colorTo: blue
+sdk: docker
+pinned: false
+app_port: 7860
+---
 
 <div>
-  <h1>
-    <img  width="300" src = "www/SCAN_logo1.png">
-  </h1>
+  <img src="www/SCAN_logo1.png" width="300" alt="SCAN Logo">
    </div>
 
 ```r 
@@ -13,10 +18,11 @@ SCAN -> Mapping Biogeographical Units (Chorotypes) based on a Network Analysis o
 ### What is SCAN about?
 In **Biogeography**, the field of biology that studies the spatial distribution of species and the evolution of their environments, a pervasive question remains: why do unrelated species often exhibit similar geographic distributions? The phenomenon of distributional congruence inspired Wallace — the father of Biogeography and co-founder of the Theory of Evolution by Natural Selection — as well as many subsequent researchers, to develop insights about the evolution and ecology of species and environments. Ideally, congruence should be among the primary criteria for any biogeographic analysis based on species distributions. Unfortunately, until now, most methods have not employed spatial congruence between distributions as an explicit and controllable parameter.
 
-<table>
+ 
+ <table>
   <tr>
   <td>
-    <img height = 80% src = "www/Psophia.jpg">
+    <img height = "200" src="www/Psophia.jpg">
   </td>
   <td>
     Psophia leucoptera <i>shares its distribution with other birds at the Inambari Endemic Area, SW Amazonia</i>
@@ -29,7 +35,7 @@ What about a framework that proposes spatial congruence between species as the p
 <table>
   <tr>
   <td>
-    <img height = 80% src = "www/Primate_chorotypes_graph.png">
+    <img height=80% src="www/Primate_chorotypes_graph.png">
   </td>
   <td>
     <i>Examples of Primate Chorotypes across South and Central Americas at a Spatial Congruence Cs = 0.6 - their network structures are show in the right panel</i>
