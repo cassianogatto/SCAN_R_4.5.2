@@ -15,7 +15,8 @@ shinyUI(
                   )
                 ),
                 
-                # --- SIDEBAR --- 01dez25 includes 2 separate tabs view + map
+                # --- SIDEBAR ----
+                
                 dashboardSidebar(
                     width = '230px',
                     sidebarMenu(
@@ -34,7 +35,7 @@ shinyUI(
                 
                 # --- BODY ---
                 dashboardBody(
-                  # Custom CSS
+                  # Custom CSS ---- 
                   tags$head(
                     tags$style(HTML("        /* --- NOVO CSS PARA O LAYOUT GLOBAL 01dez25 --- */
                       .full-screen-map {
