@@ -54,9 +54,6 @@ calculate_chunk_cs_engine <- function(species_chunk, all_shapes, areas_df) {
 }
 
 
-
-
-
 shinyServer(function(input, output, session) {
   
   # --- 1. LEITURA E PROCESSAMENTO DO MAPA ----
