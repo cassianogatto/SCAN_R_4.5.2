@@ -17,7 +17,6 @@ SCAN -> Mapping Biogeographical Units (Chorotypes) based on a Network Analysis o
 ```
 ### What is SCAN about?
 In **Biogeography**, the field of biology that studies the spatial distribution of species and the evolution of their environments, a pervasive question remains: why do unrelated species often exhibit similar geographic distributions? The phenomenon of distributional congruence inspired Wallace — the father of Biogeography and co-founder of the Theory of Evolution by Natural Selection — as well as many subsequent researchers, to develop insights about the evolution and ecology of species and environments. Ideally, congruence should be among the primary criteria for any biogeographic analysis based on species distributions. Unfortunately, until now, most methods have not employed spatial congruence between distributions as an explicit and controllable parameter.
-
  
  <table>
   <tr>
@@ -30,7 +29,9 @@ In **Biogeography**, the field of biology that studies the spatial distribution 
   </tr>
 </table>
 
-What about a framework that proposes spatial congruence between species as the primary criterion for connections in a network of spatial relationships, aggregating such pairwise relationships to detect independent, potentially overlapping spatial patterns while simultaneously describing distribution gradients? Such a framework would address two analytical requirements not previously combined, representing a significant advance in the biogeographical analysis of species distributions.
+What about analyse spatial congruence between species, the primary criterion for connections, in a framework based on Network Analysis, using pairwise relationships to detect independent, potentially overlapping spatial patterns while simultaneously describing distribution gradients? Such a framework would address two analytical requirements not previously combined in any method, representing a significant advance in the biogeographical analysis of species distributions.
+
+Well, that is what SCAN does. As a bonus, it brings spatial analysis to its essence in an extremely simple theoretical and conceptual background. No fancy models, statistics, or simulations. Just a fine adjust of the Spatial Congruence between species to find the groups of species that are composing patterns. Saptial patterns seem as network relationships.
 
 <table>
   <tr>
