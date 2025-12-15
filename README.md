@@ -46,12 +46,22 @@ What about a framework that proposes spatial congruence between species as the p
 The algorithm applies objective criteria to assess the spatial properties of entities such as raw species distributions, though it can be extrapolated to analyze environments and geographic regions. Recognized patterns may range from highly congruent configurations, where species exhibit very similar distributions and are highly clustered in their graph spatial representations, to assemblages characterized by less overlap and relaxed network spatial connections. When species overlap or replace one another along transitional and ecological zones, these patterns are recognized as liner connections in a network. This flexibility enables the recognition of potentialy dynamic spatial processes and traces of differential responses to evolutionary or ecological filters, while facilitating comparisons between species and regions based on natural and objective criteria, including the number of species in groups, their level of congruence, the ratio of shared to total distributional area, and numerous metrics derived from network analytics.
 
 ## 🚀 Installation & Usage
-Unlike previous versions, **SCAN V 1.0 runs on a current R version** (tested on R 4.5.2). You do not need to downgrade your R installation.
-### Step 1: Install R and RStudio
+Unlike previous versions, **SCAN V 1.01 runs on a current R version** (tested on R 4.5.2). You do not need to downgrade your R installation.
+
+There are three main options to use SCAN: 
+1) Use an online stable version in HuggingFace;
+2) Install R / RStudio locally but access the App remotely in GitHub without downloading files (see instructions below).
+3) Download or clone this [SCAN folder](https://github.com/cassianogatto/SCAN_R_4.5.2) in your local machine and run ui.R and server.R files directly in R/RStudio;
+
+### 1: Online App
+The online version is the easiest way to run [SCAN Analysis App](available at [SCAN Analysis App](https://huggingface.co/spaces/cassianogatto/SCAN_R_4.5.2)). However, there are hosting limitations in terms of memory and computional capacity. This means that the App only works with small sets of species / shapefiles. The low computational power of the host engine may lead to freeze the browser and data get lost. In this case is recomended to use SCAN in your local machine.
+
+### 2: Install R and RStudio
 If you haven't already, please download and install the latest versions:
 1.  **Download R:** [https://cran.r-project.org/](https://cran.r-project.org/)
 2.  **Download RStudio:** [https://posit.co/download/rstudio-desktop/](https://posit.co/download/rstudio-desktop/)
-### Step 2: Install Required Packages
+
+#### Install Required Packages
 Open RStudio, copy the code below, paste it into the Console, and press Enter. This will install all necessary dependencies (including the spatial engines).
 
 ```r
@@ -73,26 +83,31 @@ install.packages(c(
   "DT"
 ))
 ```
-### Step 3: Run SCAN
+### 3: Run SCAN remotelly
 Once the packages are installed, you can launch the SCAN Engine directly from GitHub by typing this in your R console:
 ```r
 library(shiny)
 # Run SCAN directly from the repository
 runGitHub("SCAN_R_4.5.2", "cassianogatto")
 ```
-When you run SCAN remotely for the first time is recommended to downloado the [example](https://github.com/cassianogatto/SCAN_R_4.5.2/examples) folder in this repository. A sample of Neotropical Primate distributions is available to test 1) map loading, as the shp files are properly configurated and can be used as a template, 2) Spatial Congruence Cs calculus, as the data is small enough for a rapid test of the App, 3) SCAN algorithm, and 4) Graph and Map interfaces of the SCAN App.
+When you run SCAN remotely for the first time is recommended to downloado the [example](https://github.com/cassianogatto/SCAN_R_4.5.2/examples) folder in this repository. A sample of Neotropical Primate distributions is available to test:
+  a) map loading, as the shp files are properly configurated and can be used as a template, 
+  b) Spatial Congruence Cs calculus, as the data is small enough for a rapid test of the App, 
+  c) SCAN algorithm, and 
+  d) Graph and Map interfaces of the SCAN App.
 
-### Step 4: Alternatively, you can download or clone the [SCAN_R_4.5.2](https://github.com/cassianogatto/SCAN_R_4.5.2) directory in your computer.
+### 4: Clone or download SCAN_R_4.5.2 folder in your computer
+Alternatively, you can download or clone [(see github directions)](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) the [SCAN_R_4.5.2](https://github.com/cassianogatto/SCAN_R_4.5.2) directory in your computer.
 After downloading the folder open ui.R and server.R in RStudio, call for the Shiny package, and run the App:
 ```r
 library(shiny)
 # Run SCAN
 shiny::runApp('C:/SCAN_R4.5.2')
 ```
-Or use the "run App" buttom to start the SCAN shiny app
+Or use the "run App" buttom to start the SCAN shiny app in RStudio or your local favorite internet browser.
 
 ### Example
-The folder <strong>example</strong> brings a small sample of New World Primate distributions to practice and build your first Chorotypes!
+The `example` folder <strong>example</strong> brings a small sample of New World Primate distributions to practice and analyze your first Chorotypes!
 
 ### Perspectives...
 We are applying the method to the analysis of endemic patterns of South American Birds and Primates (with collaborators). SCAN is super intuitive, allows the gattering of new insights about species distributions, and now is fully converted to a standard network analysis (in R). Many network tools and concepts can now be integrated to biogeographical analysis.
