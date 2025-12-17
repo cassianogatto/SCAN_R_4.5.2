@@ -189,7 +189,7 @@ dashboardPage(skin = 'black',
                   ), #load map
                   
                   # Step 2
-                  box(width = 12, title = "Step 2: Spatial Congruence (Cs)", status = "warning", solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
+                  box( title = "Step 2: Spatial Congruence (Cs)", status = "warning", solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
                       tags$h4(icon("calculator"), "Calculating the Index"),
                       tags$p("In the 'Spatial Congruence' tab, you define how similarity between species is quantified."),
                       tags$ul(
@@ -258,11 +258,11 @@ dashboardPage(skin = 'black',
                     # --- COLUNA 1: INTRO ---
                     column(3,
                            
-                           box(title = "1. How to 'SCAN': Overview", status = "info",
+                           box(title = "How to 'SCAN': Overview", status = "info",
                                width = NULL,  solidHeader = TRUE, 
                                collapsible = TRUE, collapsed = FALSE,
                                
-                               # BOX 1.1 Input map Box
+                               # INTRO 1.1 Input map Box
                                
                                box(title = "1. Input Map", status = "primary", solidHeader = TRUE,
                                        width = NULL,  collapsible = TRUE, collapsed = TRUE, 
@@ -282,9 +282,9 @@ dashboardPage(skin = 'black',
                                            tags$li(tags$strong("Verification:"), " Once loaded, the app will display the species loaded, the Geographic Projection (CRS), and column names."),
                                            tags$li(tags$strong("Adjusting ID Column:"), " If your species ID column is not named 'sp', type the ", tags$strong("correct column name"), " in the text box provided and reload the map.")
                                        )
-                                   ), # input map
+                                   ), # tut input map
                                
-                               # BOX 1.2: Cs
+                               # INTRO 1.2: Cs
                                
                                box(title = "2. Cs Index", status = "warning",
                                    width = NULL,  solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
@@ -303,9 +303,9 @@ dashboardPage(skin = 'black',
                                        tags$li("Check ", tags$strong("Use an internal buffer"), " to slightly shrink polygons before calculation. This avoids marginal/accidental overlaps."),
                                        tags$li(tags$em("Note:"), " This works best with metric CRS (e.g., UTM).")
                                    )
-                               ), # cs index
+                               ), # tut cs index
                                
-                               # BOX 1.3: SCAN 
+                               # INTRO 1.3: SCAN 
                                
                                box(title = "3. SCAN Algorithm", status = "danger",
                                    width = NULL, solidHeader = TRUE, 
@@ -327,10 +327,10 @@ dashboardPage(skin = 'black',
                                    tags$h4(icon("play-circle"), "Execution"),
                                    tags$p("Click the ", tags$strong("SCAN!"), " button. The result tables (Chorotypes, Parameters) will appear below. You can download them as CSV files.")
                                    
-                               ), # scan
+                               ), # tut scan
                                
                                
-                               # BOX 1.4: Viewers
+                               # INTRO 1.4: Viewers
                                
                                box(title = "4. SCAN Viewer", status = "success", width = NULL, 
                                    collapsible = TRUE, collapsed = TRUE, solidHeader = TRUE, 
@@ -350,241 +350,195 @@ dashboardPage(skin = 'black',
                                        tags$li(tags$strong("Network Graphs:"), " Visualize the topology of the species' relationships (Simple or Detailed views).")
                                    )
                                    
-                               ),
-                               
-                               
-                               # BOX 1.5: Species List
-                               
-                               # box(title = "5. SCAN Map Explorer", color = "olive", solidHeader = TRUE,
-                               #     collapsible = TRUE, collapsed = TRUE, width = NULL, 
-                               #     h2("Species List"),
-                               #     tableOutput("map_species"),
-                               # ),
+                               ), # tut viewers
                                
                            ), #ends box intro
+                           
                     ), # ends INTRO column
                     
                     # --- COLUNA 2: MAPS (Processamento de Dados Brutos) - AZUL ---
                     column(3,
                            
-                           box(title = "1. Species Distributions", status = "primary",
-                                   width = NULL,  solidHeader = TRUE, 
-                                   collapsible = TRUE, collapsed = FALSE,
-                           # BOX 1.1 Input map Box
-                           fluidRow(
-                               box(title = "1. Input Map", status = "primary",
-                                   width = NULL,  #solidHeader = TRUE, 
-                                   collapsible = TRUE, collapsed = TRUE, 
-                               
-                               tags$p("Upload shp species’ distributions. Each Species (ID => `sp` column) must have only 1 'geometry'column row"),
-                               
-                               fileInput("filemap", "Choose all map (shapefile) files (.shp + .shx + .dbl + .prj)", 
-                                         accept = c('.shp','.dbf','.sbn','.sbx','.shx',".prj"), multiple=TRUE),
-                                )
-                           ),
+                        box(title = "1. Species Distributions", status = "primary",
+                               width = NULL,  solidHeader = TRUE, 
+                               collapsible = TRUE, collapsed = FALSE,
+                        # BOX 1.1 Input map Box
+                        box(title = "1. Input Map", status = "primary",
+                           width = NULL,  solidHeader = TRUE, 
+                           collapsible = TRUE, collapsed = TRUE, 
+                        
+                        tags$p("Upload shp species’ distributions. Each Species (ID => `sp` column) must have only 1 'geometry'column row"),
+                        
+                        fileInput("filemap", "Choose all map (shapefile) files (.shp + .shx + .dbl + .prj)", 
+                                 accept = c('.shp','.dbf','.sbn','.sbx','.shx',".prj"), multiple=TRUE),
+                        
+                        # map sample
+                           plotOutput("map_shp", height = "250px"),
+                           tags$caption("If you can`t see the map here you may try to use some tools below")
+                        ),
                            
-                           # BOX 1.2: Map Plot
-                           fluidRow(
-                               box(title = "2. Map Sample", status = "primary",
-                                   width = NULL,  #solidHeader = TRUE, 
-                                   collapsible = TRUE, collapsed = TRUE,
-                               plotOutput("map_shp", height = "250px"),
-                               tags$caption("If you can`t see the map here you may try to use some tools below")
+                        # BOX 1.3: Settings & Downloads 
+                        box(title = "3. Map Workshop", status = "primary",
+                               width = NULL, solidHeader = TRUE, 
+                               collapsible = TRUE, collapsed = TRUE,
+                               
+                               # Fix Invalid Geom
+                               tags$h4("Any Invalid Geometry?"),
+                               tableOutput("invalid_map_species"),
+                               checkboxInput("fix_invalid_shapes", "Fix invalid layers? It applies 'st_make_valid()' to all geometries", value = FALSE),
+                               
+                               # ID column
+                               tags$h4("Are Map Column Names OK?"),
+                               textOutput("map_shp_names"),
+                               checkboxInput("ID_column", "Is there an ID column in your data?", value = FALSE),
+                               conditionalPanel("input.ID_column == true",
+                                                tags$p("Which column in your table is species ID:"),
+                                                textInput("colum_sp_map", "Species ID Column:", value = "taxon, species, ID? Write here..."),
+                               ),
+                               
+                               # CRS Projection
+                               tags$h4("Projection (CRS):"),
+                               textOutput("map_crs"),
+                               checkboxInput("modify_crs", "Change projection?", value = FALSE),
+                               conditionalPanel("input.modify_crs == true",
+                                    tags$p("You may choose a new CRS projection( WGS84 (4326), SIRGAS2000 (4674), etc) "),
+                                    numericInput("map_projection", "Enter (new) EPSG code:", value = 4326),
                                ),
                            ),
                            
-                           # BOX 1.3: Settings & Downloads 
-                           fluidRow(
-                               box(title = "3. Map Workshop", status = "primary",
-                                   width = NULL, #solidHeader = TRUE, 
-                                   collapsible = TRUE, collapsed = FALSE,
-                                   
-                                   # Fix Invalid Geom
-                                   tags$h4("Any Invalid Geometry?"),
-                                   tableOutput("invalid_map_species"),
-                                   checkboxInput("fix_invalid_shapes", "Fix invalid layers? It applies 'st_make_valid()' to all geometries", value = FALSE),
-                                   
-                                   # ID column
-                                   tags$h4("Are Map Column Names OK?"),
-                                   textOutput("map_shp_names"),
-                                   checkboxInput("ID_column", "Is there an ID column in your data?", value = FALSE),
-                                   conditionalPanel("input.ID_column == true",
-                                                    tags$p("Which column in your table is species ID:"),
-                                                    textInput("colum_sp_map", "Species ID Column:", value = "taxon, species, ID? Write here..."),
-                                   ),
-                                   
-                                   # CRS Projection
-                                   tags$h4("Projection (CRS):"),
-                                   textOutput("map_crs"),
-                                   checkboxInput("modify_crs", "Change projection?", value = FALSE),
-                                   conditionalPanel("input.modify_crs == true",
-                                        tags$p("You may choose a new CRS projection( WGS84 (4326), SIRGAS2000 (4674), etc) "),
-                                        numericInput("map_projection", "Enter (new) EPSG code:", value = 4326),
-                                   ),
-                               ),
-                           ),
-                           
-                           # BOX 1.4: Downloads 
-                           fluidRow(
-                               box(title = "4. Downloads", status = "primary", width = NULL, 
-                                   collapsible = TRUE, collapsed = FALSE, #solidHeader = TRUE, 
-                                   h2("Map Download"),
-                                   tags$p("DOWNLOAD HERE"),
-                                ),
-                           ),
-                               
-                           # BOX 1.5: Species List
-                           fluidRow(
-                               box(title = "5. Species List", status = "primary", #solidHeader = TRUE,
-                                   collapsible = TRUE, collapsed = FALSE,width = NULL, 
-                                   h2("Species List"),
-                                   tableOutput("map_species"),
-                               ),
-                            ),
+                        # BOX 1.4: Downloads 
+                        # box(title = "4. Downloads", status = "primary", width = NULL,
+                        #        collapsible = TRUE, collapsed = TRUE, solidHeader = TRUE,
+                        #        h2("Map Download"),
+                        #        tags$p("DOWNLOAD HERE"),
+                        # ),
+                       
+                       # BOX 1.5: Species List
+                       box(title = "5. Species List", status = "primary", solidHeader = TRUE,
+                               collapsible = TRUE, collapsed = TRUE,width = NULL, 
+                               h2("Species List"),
+                               tableOutput("map_species"),
+                       ),
+                        
                        ), #ends box MAP
+                           
                     ), # ends MAP column
                     
                     # --- COLUNA 3: CONGRUENCE (CS) (Matriz de Congruência) - AMARELO ---
                     column(3,
-                           fluidRow(
-                                # BOX 2.1: Spatial Congruence CS
-                                # Cs Index
-                                box(width = NULL, title = "1. Spatial Congruence (Cs)", status = "warning", solidHeader = TRUE,
-                                    collapsible = TRUE, collapsed = FALSE, 
-                                     
-                                    tags$h4("Spatial Congruence - Cs - Hargrove Index"),
-                                    
-                                    # Cs min and Calculus
-                                    numericInput("filter_Cs", "Minimum Cs value. Range: 0 - 1", value = 0.1),
-                                    # CAUTION Cs
-                                    div(style = "font-size: 1.4rem; color: #851404; background-color: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 5px; margin-top: 5px;",
-                                        icon("exclamation-triangle"), # Adds a nice little warning icon
-                                        strong("Caution:"), 
-                                        "The minimal Cs is the lowest spatial congruence to be considered hereafter - cutting the tail of lower values optimizes computation but,
-                                        depending on data spatial structure, low Cs values can still be biogeographically informative"
-                                    ),
-                                    actionButton("calculate_Cs", "Apply Cs Index", class = "btn-success-run", width = "100%", icon = icon("play")),
-                                    tags$hr(),
-                                    
-                                    # Alternative Indexes
-                                    tags$p("SCAN`s Cs default is the Hargrove Index ((area_overlap/area_sp1)*(area_overlap/area_sp2)). Check below If you want to use a custom formula"),
-                                    checkboxInput("use_alternative_index", "Use custom formula?", value = FALSE),
-                                    tags$p("e.g. Jaccard Index: area_overlap / (area_sp1 + area_sp2 - area_overlap)"),
-                                    conditionalPanel("input.use_alternative_index == true",
-                                        textInput("cs_similarity_index", "Formula:", value = '(area_overlap / area_sp1) * (area_overlap / area_sp2)')
-                                   ),
-                                   
+                        box(title = "Spatial Congruence CS", status = "warning",
+                           width = NULL,  solidHeader = TRUE, collapsible = TRUE, collapsed = FALSE,
+                           
+                            # BOX 2.1: Spatial Congruence CS
+                            # Cs Index
+                            box(width = NULL, title = "1. Spatial Congruence (Cs)", status = "warning", 
+                                collapsible = TRUE, collapsed = TRUE, solidHeader = TRUE,
+                                 
+                                tags$h4("Spatial Congruence - Cs - Hargrove Index"),
+                                
+                                # Cs min and Calculus
+                                numericInput("filter_Cs", "Minimum Cs value. Range: 0 - 1", value = 0.1),
+                                # CAUTION Cs
+                                div(style = "font-size: 1.4rem; color: #851404; background-color: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 5px; margin-top: 5px;",
+                                    icon("exclamation-triangle"), # Adds a nice little warning icon
+                                    strong("Caution:"), 
+                                    "The minimal Cs is the lowest spatial congruence to be considered hereafter - cutting the tail of lower values optimizes computation but,
+                                    depending on data spatial structure, low Cs values can still be biogeographically informative"
                                 ),
+                                actionButton("calculate_Cs", "Apply Cs Index", class = "btn-success-run", width = "100%", icon = icon("play")),
+                                tags$hr(),
                                 
-                                # Processing Options
-                                box( title = "2. Processing Options", status = "warning",
-                                    width = NULL, collapsible = TRUE, collapsed = FALSE, #solidHeader = TRUE,
-                                    
-                                    # --- CHUNK PROCESSING OPTION ---
-                                    tags$strong("Processing Settings (Memory Safety):"),
-                                    tags$p("Use the full dataset of break in chunks?"),
-                                    checkboxInput("use_chunks", "Process in Chunks? (Optimizes RAM in large datasets)", value = FALSE),
-                                    conditionalPanel(
-                                       condition = "input.use_chunks == true",
-                                       numericInput("chunk_size", "Chunk Size (spp per batch):", value = 20, min = 5, step = 5),
-                                       helpText("Lower values (e.g., 10-20) use less RAM but take longer.")
-                                    ),
-                                    
-                                    # Buffer Box
-                                    box(title = "2. Optimization (Buffers)", status = "warning", 
-                                        width = NULL, collapsible = TRUE, collapsed = FALSE,
-                                        
-                                        helpText("Use inner buffers to avoid marginal overlaps in large datasets (metric CRS only) and optimize performance.
-                                                 Quartiles restrict the buffer to specific size ranges (1 = smallest 25% area, 
-                                                 4 = largest 25% area)."),
-                                        checkboxInput("use_buffer_map", "Enable Internal Buffer?", value = FALSE),
-                                        
-                                        conditionalPanel("input.use_buffer_map == true",
-                                                         numericInput("shrink_factor_buff", "Buffer (metric):", value = 0.01),
-                                                         checkboxGroupInput("quantiles_to_buffer", "Quartiles to buffer:", choices = c(1,2,3,4), selected = c(), inline = TRUE),
-                                                         tags$p(style = "color: red; font-weight: bold;", icon("exclamation-triangle"), " Warning: This alters polygon areas!")
-                                        )
-                                    )
+                                # Alternative Indexes
+                                tags$p("SCAN`s Cs default is the Hargrove Index ((area_overlap/area_sp1)*(area_overlap/area_sp2)). Check below If you want to use a custom formula"),
+                                checkboxInput("use_alternative_index", "Use custom formula?", value = FALSE),
+                                tags$p("e.g. Jaccard Index: area_overlap / (area_sp1 + area_sp2 - area_overlap)"),
+                                conditionalPanel("input.use_alternative_index == true",
+                                    textInput("cs_similarity_index", "Formula:", value = '(area_overlap / area_sp1) * (area_overlap / area_sp2)')
+                               ),
+                               
+                            ), # cs index
+                        
+                            # 2.2 Processing Options
+                            box( title = "2.Processing Options", status = "warning",
+                                width = NULL, collapsible = TRUE, collapsed = TRUE, solidHeader = TRUE,
+                                
+                                # --- CHUNK PROCESSING OPTION ---
+                                tags$strong("Processing Settings (Memory Safety):"),
+                                tags$p("Use the full dataset of break in chunks?"),
+                                checkboxInput("use_chunks", "Process in Chunks? (Optimizes RAM in large datasets)", value = FALSE),
+                                conditionalPanel(
+                                   condition = "input.use_chunks == true",
+                                   numericInput("chunk_size", "Chunk Size (spp per batch):", value = 20, min = 5, step = 5),
+                                   helpText("Lower values (e.g., 10-20) use less RAM but take longer.")
                                 ),
+                            ), # processing
+                        
+                            # 2.3 Buffer Box
+                            box(title = "3.Optimization (Buffers)", status = "warning", 
+                                width = NULL, collapsible = TRUE, collapsed = TRUE, solidHeader = TRUE,
                                 
-                                # RESULTS Cs
-                                box(width = NULL, title = "3. Cs Matrix", status = "warning",
-                                   solidHeader = TRUE,collapsible = TRUE, collapsed = FALSE,
+                                helpText("Use inner buffers to avoid marginal overlaps in large datasets (metric CRS only) and optimize performance.
+                                         Quartiles restrict the buffer to specific size ranges (1 = smallest 25% area, 
+                                         4 = largest 25% area)."),
+                                checkboxInput("use_buffer_map", "Enable Internal Buffer?", value = FALSE),
                                 
-                                   tags$hr(),
-                                
-                                   # --- NEW CHUNK PROCESSING OPTION ---
-                                   tags$strong("Processing Settings (Memory Safety):"),
-                                   checkboxInput("use_chunks", "Process in Chunks? (Prevents RAM crash)", value = FALSE),
-                                
-                                   conditionalPanel(
-                                       condition = "input.use_chunks == true",
-                                       numericInput("chunk_size", "Chunk Size (spp per batch):", value = 20, min = 5, step = 5),
-                                       helpText("Lower values (e.g., 10-20) use less RAM but take longer.")
-                                   ),
-                                   tags$hr(),
-                                
-                                
-                                   fluidRow(
-                                       column(6, numericInput("filter_Cs", "Minimum Cs value:", value = 0.1, step = 0.05)),
-                                       column(6, actionButton("calculate_Cs", "Apply Cs Index", class = "btn-warning align-btn", width = "100%", icon = icon("play")))
-                                   )
-                                ),
-
-
-                               # box(width = NULL, title = "1. Calculate Index", status = "warning", 
-                               #     solidHeader = TRUE,collapsible = TRUE, collapsed = FALSE, 
-                               #     
-                               #     numericInput("cs_resolution", "Resolution (km)", value = 100, min = 1),
-                               #     fluidRow(
-                               #         column(6, sliderInput("cs_min_threshold", "Cs Min. Threshold", min = 0, max = 1, value = 0.2, step = 0.05)),
-                               #         column(6, sliderInput("cs_max_threshold", "Cs Max. Threshold", min = 0, max = 1, value = 0.3, step = 0.05))
-                               #     ),
-                               #     # Botão de Cálculo
-                               #     actionButton("run_cs_calculation", "Run Cs Calculation", class = "btn-warning"),
-                               #     tags$hr(),
-                               #     h4("Cs Matrix/Table Preview"),
-                               #     DT::DTOutput("cs_matrix_preview")
-                               # ),
-                               # 
-                               # # BOX 2.2: Resultados CS
-                               # box(width = NULL, title = "2. Cs Network & Downloads", status = "warning",
-                               #     h4("Cs Network (Raw)"),
-                               #     # Placeholder para visualização da rede Cs bruta (sem cores de Chorotype)
-                               #     plotOutput("cs_network_plot_raw", height = "300px"), 
-                               #     downloadButton("download_cs_matrix", "Download Cs Matrix")
-                               # )
-                           )
-                    ),
+                                conditionalPanel("input.use_buffer_map == true",
+                                                 numericInput("shrink_factor_buff", "Buffer (metric):", value = 0.01),
+                                                 checkboxGroupInput("quantiles_to_buffer", "Quartiles to buffer:", choices = c(1,2,3,4), selected = c(), inline = TRUE),
+                                                 tags$p(style = "color: red; font-weight: bold;", icon("exclamation-triangle"), " Warning: This alters polygon areas!")
+                                )
+                            ), # buffer
+                           
+                            # RESULTS Cs
+                            box(title = "4. Check Cs)", status = "warning", 
+                                width = NULL, collapsible = TRUE, collapsed = TRUE, solidHeader = TRUE,
+                                tags$h5("Nodes and Edges Preview:"),
+                                fluidRow(
+                                    column(6, tableOutput("graph_nodes")),
+                                    column(6, tableOutput("graph_edges"))
+                                )
+                            ), # results Cs
+                        ),   
+                    ), # ends CS column
                     
                     # --- COLUNA 4: SCAN (Análise da Rede e Chorotypes) - VERMELHO ---
                     column(3,
-                           # BOX 3.1: Configuração SCAN
-                           box(width = NULL, title = "1. SCAN Network Analysis Configuration", status = "danger", solidHeader = TRUE,
-                               h4("SCAN Algorithm Parameters"),
-                               fluidRow(
-                                   column(6, numericInput("scan_resolution_disp", "Resolution (Disp)", value = 0.0, step = 0.1)),
-                                   column(6, checkboxInput("limit_diameter", "Limit Diameter?", value = TRUE))
-                               ),
-                               numericInput("max_diameter", "Max Diameter", value = 15, min = 1),
-                               checkboxInput("require_full_corr", "Require Full Correlation (Chorotype)?", value = FALSE),
+                           box(title = "SCAN Analysis", status = "danger",
+                               width = NULL,  solidHeader = TRUE, collapsible = TRUE, collapsed = FALSE,
                                
-                               # Botão Principal de Análise
-                               actionButton("run_scan_analysis", "RUN SCAN ANALYSIS", class = "btn-danger"),
-                               tags$hr(),
-                               h4("SCAN Output / Chorotype Map"),
-                               # Output para o Grafo de Rede (GGRAPH) ou Mapa Estático de Chorotypes
-                               plotOutput("scan_chorotype_map", height = "300px")
-                           ),
+                               # BOX 3.1: Configuração SCAN
+                               box(title = "1. SCAN Network Analysis Configuration", status = "danger",
+                                   width = NULL,  solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
+                                   
+                                   h4("SCAN Algorithm Parameters"),
+                                   fluidRow(
+                                       column(6, numericInput("scan_resolution_disp", "Resolution (Disp)", value = 0.0, step = 0.1)),
+                                       column(6, checkboxInput("limit_diameter", "Limit Diameter?", value = TRUE))
+                                   ),
+                                   numericInput("max_diameter", "Max Diameter", value = 15, min = 1),
+                                   checkboxInput("require_full_corr", "Require Full Correlation (Chorotype)?", value = FALSE),
+                                   
+                                   # Botão Principal de Análise
+                                   actionButton("run_scan_analysis", "RUN SCAN ANALYSIS", class = "btn-danger"),
+                                   tags$hr(),
+                                   h4("SCAN Output / Chorotype Map"),
+                                   # Output para o Grafo de Rede (GGRAPH) ou Mapa Estático de Chorotypes
+                                   plotOutput("scan_chorotype_map", height = "300px")
+                               ),
+                               
+                               # BOX 3.2: Resultados SCAN
+                               box(title = "2. Final Results & Downloads", status = "danger",
+                                   width = NULL,  solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
+                                   h4("Chorotype Preview"),
+                                   # Tabela de espécies com Chorotype
+                                   DT::DTOutput("chorotype_list_preview"),
+                                   downloadButton("download_chorotypes", "Download Chorotypes")
+                               )
+                                   
+                               ),
                            
-                           # BOX 3.2: Resultados SCAN
-                           box(width = NULL, title = "2. Final Results & Downloads", status = "danger",
-                               h4("Chorotype Preview"),
-                               # Tabela de espécies com Chorotype
-                               DT::DTOutput("chorotype_list_preview"),
-                               downloadButton("download_chorotypes", "Download Chorotypes")
-                           )
-                    )
+                    ),
+                    
                 ) # fim fluidRow principal
         ), # fim tabItem "data_processing_pipeline"
         
