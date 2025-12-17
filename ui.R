@@ -186,7 +186,7 @@ dashboardPage(skin = 'black',
                         tags$li(tags$strong("Verification:"), " Once loaded, the app will display information regarding the number of species, the Geographic Projection (CRS), and column names."),
                         tags$li(tags$strong("Adjusting ID Column:"), " If your species ID column is not named 'sp', type the ", tags$strong("correct column name"), " in the text box provided and reload the map.")
                       )
-                  ),
+                  ), #load map
                   
                   # Step 2
                   box(width = 12, title = "Step 2: Spatial Congruence (Cs)", status = "warning", solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
@@ -204,7 +204,7 @@ dashboardPage(skin = 'black',
                         tags$li("Check ", tags$strong("Use an internal buffer"), " to slightly shrink polygons before calculation. This avoids marginal/accidental overlaps."),
                         tags$li(tags$em("Note:"), " This works best with metric CRS (e.g., UTM).")
                       )
-                  ),
+                  ), # Cs
                   
                   # Step 3
                   box(width = 12, title = "Step 3: Running SCAN Analysis", status = "danger", solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
@@ -223,7 +223,7 @@ dashboardPage(skin = 'black',
                       tags$br(),
                       tags$h4(icon("play-circle"), "Execution"),
                       tags$p("Click the ", tags$strong("SCAN!"), " button. The result tables (Chorotypes, Parameters) will appear below. You can download them as CSV files.")
-                  ),
+                  ), # SCAN
                   
                   # Step 4
                   box(width = 12, title = "Step 4: Visualizing Results (Viewer)", status = "success", solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
@@ -241,7 +241,7 @@ dashboardPage(skin = 'black',
                         tags$li(tags$strong("Static Map:"), " A high-quality ggplot map suitable for publication."),
                         tags$li(tags$strong("Network Graphs:"), " Visualize the topology of the species' relationships (Simple or Detailed views).")
                       )
-                  )
+                  ) # Viewer
                 )
         ),
         
@@ -254,8 +254,118 @@ dashboardPage(skin = 'black',
                 # ),
                
                 fluidRow(
-                    # --- COLUNA 1: MAPS (Processamento de Dados Brutos) - AZUL ---
-                    column(4,
+                    
+                    # --- COLUNA 1: INTRO ---
+                    column(3,
+                           
+                           box(title = "1. How to 'SCAN': Overview", status = "info",
+                               width = NULL,  solidHeader = TRUE, 
+                               collapsible = TRUE, collapsed = FALSE,
+                               
+                               # BOX 1.1 Input map Box
+                               
+                               box(title = "1. Input Map", status = "primary", solidHeader = TRUE,
+                                       width = NULL,  collapsible = TRUE, collapsed = TRUE, 
+                                       
+                                       tags$h4(icon("map"), "Input File Requirements"),
+                                       tags$ul(
+                                           tags$li("IN ", tags$strong("SCAN"), "every data comes from geographic distributions of species."),
+                                           tags$li("Your map must be a ", tags$strong("Shapefile (.shp)"), "."),
+                                           tags$li("The map must contain ", tags$strong("all species' distributions as unique layers"), ", each having unique IDs and geometries."),
+                                           tags$li("Ideally, the Shapefile should have one ID column named ", tags$code("'sp'"), " and its correpondent ", tags$code("'geometry'"), ".")
+                                       ),
+                                       #tags$br(),
+                                       tags$h4(icon("upload"), "Loading Steps"),
+                                       tags$ol(
+                                           tags$li(tags$strong("Upload:"), " Click the ", tags$em("Browse..."), " button in the 'Species Distribution Maps' tab. ", 
+                                                   tags$strong("Important:"), " You must select the ", tags$code(".shp"), " file along with its associated files (e.g., ", tags$code(".shx, .dbf, .prj"), ") simultaneously."),
+                                           tags$li(tags$strong("Verification:"), " Once loaded, the app will display the species loaded, the Geographic Projection (CRS), and column names."),
+                                           tags$li(tags$strong("Adjusting ID Column:"), " If your species ID column is not named 'sp', type the ", tags$strong("correct column name"), " in the text box provided and reload the map.")
+                                       )
+                                   ), # input map
+                               
+                               # BOX 1.2: Cs
+                               
+                               box(title = "2. Cs Index", status = "warning",
+                                   width = NULL,  solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
+                                   
+                                   tags$h4(icon("calculator"), "Calculating the Index"),
+                                   tags$p("In the 'Spatial Congruence' tab, you define how similarity between species is quantified."),
+                                   tags$ul(
+                                       tags$li(tags$strong("Formula:"), " The default is the ", tags$strong("Hargrove Index"), ". You can define a custom formula by checking 'Use an alternative Cs Index'."),
+                                       tags$li(tags$strong("Filtering:"), " Use the 'Minimum Cs value' input to remove weak connections (e.g., < 0.1) to clean up the network."),
+                                       tags$li(tags$strong("Action:"), " Click ", tags$code("Apply Cs index to map"), " to start the calculation.")
+                                   ),
+                                   tags$br(),
+                                   tags$h4(icon("layer-group"), "Optimization (Buffers)"),
+                                   tags$p("For large datasets or complex geometries, exact intersection can be slow."),
+                                   tags$ul(
+                                       tags$li("Check ", tags$strong("Use an internal buffer"), " to slightly shrink polygons before calculation. This avoids marginal/accidental overlaps."),
+                                       tags$li(tags$em("Note:"), " This works best with metric CRS (e.g., UTM).")
+                                   )
+                               ), # cs index
+                               
+                               # BOX 1.3: SCAN 
+                               
+                               box(title = "3. SCAN Algorithm", status = "danger",
+                                   width = NULL, solidHeader = TRUE, 
+                                   collapsible = TRUE, collapsed = TRUE,
+                                   
+                                  tags$h4(icon("sliders-h"), "Configuration"),
+                                   tags$p("Configure how the algorithm scans through the network thresholds (Ct):"),
+                                   tags$ul(
+                                       tags$li(tags$strong("Range:"), " Set the ", tags$code("Max"), " and ", tags$code("Min"), " threshold values. (Cs min must be equal or higher than the 'Minimum Cs value')."),
+                                       tags$li(tags$strong("Resolution:"), " Define the step size (e.g., 0.01) for the scan. Smaller steps take longer but provide more detail."),
+                                       tags$li(tags$strong("Criteria:"), 
+                                               tags$ul(
+                                                   tags$li(tags$strong("Overlap:"), " If checked, requires all species in a group to overlap with each other (Clique)."),
+                                                   tags$li(tags$strong("Diameter:"), " Limits the maximum 'width' of the network component to avoid sprawling chains of species.")
+                                               )
+                                       )
+                                   ),
+                                   tags$br(),
+                                   tags$h4(icon("play-circle"), "Execution"),
+                                   tags$p("Click the ", tags$strong("SCAN!"), " button. The result tables (Chorotypes, Parameters) will appear below. You can download them as CSV files.")
+                                   
+                               ), # scan
+                               
+                               
+                               # BOX 1.4: Viewers
+                               
+                               box(title = "4. SCAN Viewer", status = "success", width = NULL, 
+                                   collapsible = TRUE, collapsed = TRUE, solidHeader = TRUE, 
+                                   
+                                   tags$h4(icon("eye"), "Exploring Chorotypes"),
+                                   tags$p("Go to the 'SCAN Viewer' tab to explore the results interactively."),
+                                   tags$ol(
+                                       tags$li(tags$strong("Select Threshold (Ct):"), " Use the input box to choose a specific cut-off level."),
+                                       tags$li(tags$strong("Select Chorotypes:"), " A list of available groups (numbers) for that threshold will appear. Check the boxes to visualize specific groups."),
+                                       tags$li(tags$strong("Customize:"), " Adjust transparency and color palettes using the controls on the right.")
+                                   ),
+                                   tags$br(),
+                                   tags$h4(icon("images"), "View Modes"),
+                                   tags$ul(
+                                       tags$li(tags$strong("Interactive Map:"), " A Leaflet map allowing zooming and panning."),
+                                       tags$li(tags$strong("Static Map:"), " A ggplot2 map."),
+                                       tags$li(tags$strong("Network Graphs:"), " Visualize the topology of the species' relationships (Simple or Detailed views).")
+                                   )
+                                   
+                               ),
+                               
+                               
+                               # BOX 1.5: Species List
+                               
+                               # box(title = "5. SCAN Map Explorer", color = "olive", solidHeader = TRUE,
+                               #     collapsible = TRUE, collapsed = TRUE, width = NULL, 
+                               #     h2("Species List"),
+                               #     tableOutput("map_species"),
+                               # ),
+                               
+                           ), #ends box intro
+                    ), # ends INTRO column
+                    
+                    # --- COLUNA 2: MAPS (Processamento de Dados Brutos) - AZUL ---
+                    column(3,
                            
                            box(title = "1. Species Distributions", status = "primary",
                                    width = NULL,  solidHeader = TRUE, 
@@ -334,8 +444,8 @@ dashboardPage(skin = 'black',
                        ), #ends box MAP
                     ), # ends MAP column
                     
-                    # --- COLUNA 2: CONGRUENCE (CS) (Matriz de Congruência) - AMARELO ---
-                    column(4,
+                    # --- COLUNA 3: CONGRUENCE (CS) (Matriz de Congruência) - AMARELO ---
+                    column(3,
                            fluidRow(
                                 # BOX 2.1: Spatial Congruence CS
                                 # Cs Index
@@ -447,8 +557,8 @@ dashboardPage(skin = 'black',
                            )
                     ),
                     
-                    # --- COLUNA 3: SCAN (Análise da Rede e Chorotypes) - VERMELHO ---
-                    column(4,
+                    # --- COLUNA 4: SCAN (Análise da Rede e Chorotypes) - VERMELHO ---
+                    column(3,
                            # BOX 3.1: Configuração SCAN
                            box(width = NULL, title = "1. SCAN Network Analysis Configuration", status = "danger", solidHeader = TRUE,
                                h4("SCAN Algorithm Parameters"),
