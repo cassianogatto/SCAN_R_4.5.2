@@ -171,7 +171,8 @@ dashboardPage(skin = 'black',
                   tags$p("Follow this step-by-step guide to perform a Spatial Congruence Analysis."),
                   
                   # Step 1
-                  box(width = 12, title = "Step 1: Loading Species Maps", status = "primary", solidHeader = TRUE, collapsible = TRUE,
+                  box(title = "Step 1: Loading Species Maps", status = "primary", 
+                      width = 6, solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
                       tags$h4(icon("map"), "Input File Requirements"),
                       tags$ul(
                         tags$li("Your map must be a ", tags$strong("Shapefile (.shp)"), "."),
@@ -189,10 +190,12 @@ dashboardPage(skin = 'black',
                   ), #load map
                   
                   # Step 2
-                  box( title = "Step 2: Spatial Congruence (Cs)", status = "warning", solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
-                      tags$h4(icon("calculator"), "Calculating the Index"),
-                      tags$p("In the 'Spatial Congruence' tab, you define how similarity between species is quantified."),
-                      tags$ul(
+                  box( title = "Step 2: Spatial Congruence (Cs)", status = "warning", 
+                       solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
+                       width = 6,
+                       tags$h4(icon("calculator"), "Calculating the Index"),
+                        tags$p("In the 'Spatial Congruence' tab, you define how similarity between species is quantified."),
+                        tags$ul(
                         tags$li(tags$strong("Formula:"), " The default is the ", tags$strong("Hargrove Index"), " (overlap area / species area). You can define a custom formula by checking 'Use an alternative Cs Index'."),
                         tags$li(tags$strong("Filtering:"), " Use the 'Minimum Cs value' input to remove weak connections (e.g., < 0.1) to clean up the network."),
                         tags$li(tags$strong("Action:"), " Click ", tags$code("Apply Cs index to map"), " to start the calculation.")
@@ -207,7 +210,8 @@ dashboardPage(skin = 'black',
                   ), # Cs
                   
                   # Step 3
-                  box(width = 12, title = "Step 3: Running SCAN Analysis", status = "danger", solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
+                  box(title = "Step 3: Running SCAN Analysis", status = "danger",
+                      width = 6,  solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
                       tags$h4(icon("sliders-h"), "Configuration"),
                       tags$p("Configure how the algorithm scans through the network thresholds (Ct):"),
                       tags$ul(
@@ -226,7 +230,8 @@ dashboardPage(skin = 'black',
                   ), # SCAN
                   
                   # Step 4
-                  box(width = 12, title = "Step 4: Visualizing Results (Viewer)", status = "success", solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
+                  box(title = "Step 4: Visualizing Results (Viewer)", status = "success",
+                      width = 6,  solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
                       tags$h4(icon("eye"), "Exploring Chorotypes"),
                       tags$p("Go to the 'SCAN Viewer' tab to explore the results interactively."),
                       tags$ol(
@@ -507,32 +512,37 @@ dashboardPage(skin = 'black',
                                width = NULL,  solidHeader = TRUE, collapsible = TRUE, collapsed = FALSE,
                                
                                # BOX 3.1: Configuração SCAN
-                               box(title = "1. SCAN Network Analysis Configuration", status = "danger",
-                                   width = NULL,  solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
-                                   
-                                   h4("SCAN Algorithm Parameters"),
+                               box(width = NULL, title = "1. Algorithm Configuration", status = "danger", solidHeader = TRUE,
                                    fluidRow(
-                                       column(6, numericInput("scan_resolution_disp", "Resolution (Disp)", value = 0.0, step = 0.1)),
-                                       column(6, checkboxInput("limit_diameter", "Limit Diameter?", value = TRUE))
+                                       column(6, numericInput("resolution", "Resolution (Step):", value = 0.1, step = 0.01)),
+                                       column(6, numericInput("threshold_min", "Min Threshold:", value = 0.2, step = 0.05)),
+                                       column(6, numericInput("threshold_max", "Max Threshold:", value = 0.9, step = 0.05)),
+                                       column(6, 
+                                              checkboxInput("filter_diameter", "Limit Diameter?", value = TRUE),
+                                              conditionalPanel("input.filter_diameter == true",
+                                                               numericInput("max_diameter", "Max Diameter:", value = 15)
+                                              )
+                                       )
                                    ),
-                                   numericInput("max_diameter", "Max Diameter", value = 15, min = 1),
-                                   checkboxInput("require_full_corr", "Require Full Correlation (Chorotype)?", value = FALSE),
-                                   
-                                   # Botão Principal de Análise
-                                   actionButton("run_scan_analysis", "RUN SCAN ANALYSIS", class = "btn-danger"),
+                                   fluidRow(
+                                       column(3, checkboxInput("overlap", "Require Full Overlap (Clique)?", value = TRUE))
+                                   ),
                                    tags$hr(),
-                                   h4("SCAN Output / Chorotype Map"),
-                                   # Output para o Grafo de Rede (GGRAPH) ou Mapa Estático de Chorotypes
-                                   plotOutput("scan_chorotype_map", height = "300px")
+                                   actionButton("run_scan", "RUN SCAN ANALYSIS", class = "btn-danger", icon = icon("rocket"), width = "200px")
                                ),
                                
-                               # BOX 3.2: Resultados SCAN
-                               box(title = "2. Final Results & Downloads", status = "danger",
-                                   width = NULL,  solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
-                                   h4("Chorotype Preview"),
-                                   # Tabela de espécies com Chorotype
-                                   DT::DTOutput("chorotype_list_preview"),
-                                   downloadButton("download_chorotypes", "Download Chorotypes")
+                               # Results Box
+                               box(width = NULL, title = "2. Results & Downloads", status = "danger",
+                                   fluidRow(
+                                       column(8, uiOutput("names_scan_list")),
+                                       column(4, downloadButton("downloadData", "Download Selected", class = "btn-default align-btn"))
+                                   ),
+                                   tags$hr(),
+                                   tags$h4("Preview Data:"),
+                                   DT::DTOutput('table_download_preview'),
+                                   tags$br(),
+                                   tags$h4("Chorotypes List:"),
+                                   tableOutput("scan_chorotypes")
                                )
                                    
                                ),
