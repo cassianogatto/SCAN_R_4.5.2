@@ -29,10 +29,10 @@ In **Biogeography**, the field of biology that studies the spatial distribution 
   </tr>
 </table>
 
-What about analyse spatial congruence between species, the primary informative criterion, using pairwise Network Relationships to detect (1) independent and also potentially (2) overlapping spatial patterns, while yet simultaneously describing (3) gradients fo species distributions? Such a framework would address three analytical requirements not previously combined in any method, representing a significant advance in the biogeographical analysis of species distributions.
+What about analyse spatial congruence between species, the primary informative criterion, using pairwise Network Relationships to detect (1) independent and also potentially (2) overlapping spatial patterns, while yet simultaneously describing (3) gradients of species distributions? Such a framework would address three analytical requirements not previously combined in any method, representing a significant advance in the biogeographical analysis of species distributions.
 
- # This is SCAN V 1.01 # 
- As a bonus, it brings spatial analysis to its essence in an extremely simple theoretical and conceptual background. No fancy models, statistics, or simulations. Just a fine adjustment of the Spatial Congruence (Cs), a measurement of proportional overlapping between species, to find Chorotypes, or communities in Graph terminology. Yes, spatial patterns can be seem as direct network relationships.
+# This is SCAN V 1.01 # 
+The **Chorotype** concept brings spatial analysis to its essence in an extremely simple theoretical and conceptual background. No fancy models, statistics, or simulations. Just a fine inspection of the proportional overlapping between species -  Spatial Congruence (Cs) - to find Chorotypes, or communities in **Graph** terminology. Yes, spatial patterns can be seem as direct network relationships.
 
 <table>
   <tr>
@@ -54,7 +54,7 @@ What about analyse spatial congruence between species, the primary informative c
   </tr>
 </table>
 
-The algorithm applies objective criteria to assess the spatial properties of entities such as raw species distributions, though it can be extrapolated to analyze environments and geographic regions. Recognized patterns may range from highly congruent configurations, where species exhibit very similar distributions and are highly clustered in their graph spatial representations, to assemblages characterized by less overlap and relaxed network spatial connections. When species overlap or replace one another along transitional and ecological zones, these patterns are recognized as liner connections in a network. This flexibility enables the recognition of potentialy dynamic spatial processes and traces of differential responses to evolutionary or ecological filters, while facilitating comparisons between species and regions based on natural and objective criteria, including the number of species in groups, their level of congruence, the ratio of shared to total distributional area, and numerous metrics derived from network analytics.
+The SCAN algorithm applies objective criteria to assess the spatial properties of relationship between raw species distributions, though it can be extrapolated to analyze environments and geographic regions. Recognized patterns may range from highly congruent configurations, where species exhibit very similar distributions and are clustered in their graph spatial representations, to assemblages characterized by less overlap and relaxed network spatial connections. When species overlap or replace one another along transitional and ecological zones, these patterns are recognized as liner connections in a network. This flexibility enables the recognition of potentialy dynamic spatial processes and traces of differential responses to evolutionary or ecological filters, while facilitating comparisons between species and regions based on natural and objective criteria, including the number of species in groups, their level of congruence, the ratio of shared to total distributional area, and numerous metrics derived from network analytics.
 
 ## 🚀 Installation & Usage
 Unlike previous versions, **SCAN V 1.01 runs on a current R version** (tested on R 4.5.2). You do not need to downgrade your R installation.
