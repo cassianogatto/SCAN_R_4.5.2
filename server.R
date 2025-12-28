@@ -442,9 +442,19 @@ shinyServer(function(input, output, session) {
         SCANlist()[['parameters']]
     })
     
-    output$scan_chorotypes <- renderTable({
+    output$scan_chorotypes_summary <- renderTable({
         req(SCANlist())
-        head(SCANlist()[['chorotypes']], 20) # Mostrar só as primeiras
+        SCANlist()[['chorotypes']] |>
+            group_by(Chorotype_ID) |>
+            summarise(
+                min_Ct = min(Threshold),
+                max_Ct = max(Threshold),
+                Ct_range = paste(min(Threshold), max(Threshold), sep = "-"),
+                n_unique_species = n_distinct(Species),  # Count unique species
+                unique_species = toString(sort(unique(Species))),
+                .groups = "drop"
+            ) |> 
+            select(Chorotype = Chorotype_ID, Ct_range, N_spp = n_unique_species )
     })
     
     # Lista dinâmica de arquivos para download
@@ -474,7 +484,7 @@ shinyServer(function(input, output, session) {
     
     output$table_download_preview <- renderDT({
         req(dataset_SCAN_ouput())
-        datatable(dataset_SCAN_ouput(), options = list(pageLength = 5, scrollX = TRUE))
+        datatable(dataset_SCAN_ouput(), options = list(pageLength = 15, scrollX = TRUE))
     })
     
     output$downloadData <- downloadHandler(
