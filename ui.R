@@ -492,30 +492,25 @@ shinyUI(
               
               # 7: MAP + GRAPH VIEWER ----
               tabItem("static_view",
-                      fluidPage(
-                          #fluidRow(
-                              column(5, 
-                                     box(width = NULL, title = "Static Map", status = "primary", solidHeader = TRUE,
-                                         plotOutput("ggplot_map", height = "500px")
-                                     )
-                              ),
-                              column(5,
-                                     box(width = NULL, title = "Network Topology", status = "primary", solidHeader = TRUE,
-                                         plotOutput("graph_plot", height = "500px")
-                                     )
-                              ), 
-                              
-                             # column(1,),
-                              
-                          #),
-                          #fluidRow(
-                              column(8,
-                                     box(width = NULL, title = "Species List (Selected Groups)", status = "success", solidHeader = TRUE,
-                                         DT::DTOutput("view_species_table")
-                                     )
-                              )
-                          #)
-                      )
+                  fluidPage(
+                      column(5, 
+                             box(width = NULL, title = "Static Map", status = "primary", solidHeader = TRUE,
+                                 plotOutput("ggplot_map", height = "500px")
+                             )
+                          ),
+                          column(5,
+                             box(width = NULL, title = "Network Topology", status = "primary", solidHeader = TRUE,
+                                 plotOutput("graph_plot", height = "500px")
+                             )
+                          ), 
+                          
+                          column(10,
+                             box(width = NULL, title = "Species List (Selected Groups)", status = "success", solidHeader = TRUE,
+                                 DT::DTOutput("view_species_table")
+                             )
+                          )
+                      #)
+                  )
               )
           ) # fim tabItems ----
       ) # fim dashboardBody

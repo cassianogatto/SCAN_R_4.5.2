@@ -546,7 +546,7 @@ shinyServer(function(input, output, session) {
         return(g_view)
     })
     
-    # C. REACTIVE UNIFICADO (MAPA GEOGRÁFICO)
+    # C. MAPA GEOGRÁFICO g_map()
     g_map <- reactive({
         req(g_sub(), map())
         
@@ -601,7 +601,7 @@ shinyServer(function(input, output, session) {
             addLegend("bottomright", pal = pal_fun, values = ~comps, title = "Group")
     })
     
-    # 2. GGPLOT MAP (ESTÁTICO - ABA 2)
+    # 2. GGPLOT MAP ggplot_map()
     output$ggplot_map <- renderPlot({
         req(g_map(), chorotype_pal())
         
@@ -612,7 +612,7 @@ shinyServer(function(input, output, session) {
             labs(title = paste("Spatial Distribution (Ct =", input$threshold_global, ")"))
     })
     
-    # 3. GRAPH PLOT (TOPOLOGIA - ABA 2)
+    # 3. GRAPH PLOT  - graph_plot()
     output$graph_plot <- renderPlot({
         req(g_sub(), chorotype_pal())
         
@@ -661,7 +661,6 @@ shinyServer(function(input, output, session) {
     
     # 5. MINI GRAPH PLOT (FLOATING ON MAP - ABA 1) ----
     
-    # 5. MINI GRAPH PLOT (FLOATING ON MAP - ABA 1)
     output$mini_graph_plot <- renderPlot({
         req(g_sub(), chorotype_pal())
         
