@@ -492,25 +492,45 @@ shinyUI(
               
               # 7: MAP + GRAPH VIEWER ----
               tabItem("static_view",
-                  fluidPage(
-                      column(5, 
-                             box(width = NULL, title = "Static Map", status = "primary", solidHeader = TRUE,
-                                 plotOutput("ggplot_map", height = "500px")
-                             )
-                          ),
-                          column(5,
-                             box(width = NULL, title = "Network Topology", status = "primary", solidHeader = TRUE,
-                                 plotOutput("graph_plot", height = "500px")
-                             )
-                          ), 
-                          
-                          column(10,
-                             box(width = NULL, title = "Species List (Selected Groups)", status = "success", solidHeader = TRUE,
-                                 DT::DTOutput("view_species_table")
-                             )
+                      fluidPage(
+                          fluidRow(
+                              column(6,
+                                     # First box - Network Topology
+                                     div(
+                                         style = "margin-bottom: 15px;",
+                                         box(
+                                             title = "Network Topology", 
+                                             status = "primary", 
+                                             solidHeader = TRUE,
+                                             width = NULL,
+                                             height = "300px",  # ~50% of the second box
+                                             plotOutput("graph_plot", height = "250px")
+                                         )
+                                     ),
+                                     # Second box - Static Map
+                                     box(
+                                         title = "Static Map", 
+                                         status = "primary", 
+                                         solidHeader = TRUE,
+                                         width = NULL,
+                                         height = "600px",  # ~100% more than first box
+                                         plotOutput("ggplot_map", height = "550px")
+                                     )
+                              ),
+                              column(4,
+                                     # Single tall box for Species List
+                                     box(
+                                         title = "Species List (Selected Groups)", 
+                                         status = "success", 
+                                         solidHeader = TRUE,
+                                         width = NULL,
+                                         height = "915px",  # Slightly more than 300+600 to accommodate margins
+                                         DT::DTOutput("view_species_table")
+                                     )
+                              ),
+                              column(2,),
                           )
-                      #)
-                  )
+                      )
               )
           ) # fim tabItems ----
       ) # fim dashboardBody
